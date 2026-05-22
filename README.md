@@ -54,7 +54,7 @@ VITE_FIREBASE_APP_ID=
 
 ## 🤝 Contributing
 
-Contributions are welcome! Feel free to fork the project and submit a PR.
+Contributions are welcome! Feel free to fork the project and submit a PR....
 
 ## 📄 License
 
