@@ -6,7 +6,7 @@ import Card from "../components/ui/Card";
 import GradientButton from "../components/ui/GradientButton";
 
 export const Login = () => {
-  const [email, setEmail] = useState("indresh@rankhub.dev");
+  const [email, setEmail] = useState("indresh@rankerhub.dev");
   const [password, setPassword] = useState("••••••••••••");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -24,10 +24,10 @@ export const Login = () => {
   return (
     <div className="min-h-screen bg-[#090D1A] text-slate-100 flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-300">
       
-      {/* Premium Rotating Background Blobs */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-violet-600/10 rounded-full blur-[140px] pointer-events-none animate-blob" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-blue-600/10 rounded-full blur-[140px] pointer-events-none animate-blob [animation-delay:3s]" />
-      <div className="absolute top-[40%] left-[30%] w-[30vw] h-[30vw] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none animate-pulse-slow" />
+      {/* Premium Rotating Background Blobs (optimized with radial gradients instead of expensive blur filters) */}
+      <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-blob-purple-strong pointer-events-none animate-blob transform-gpu" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-blob-blue-strong pointer-events-none animate-blob [animation-delay:3s] transform-gpu" />
+      <div className="absolute top-[40%] left-[30%] w-[30vw] h-[30vw] bg-blob-indigo-strong pointer-events-none animate-pulse-slow transform-gpu" />
 
       {/* Grid Pattern overlays */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
@@ -49,7 +49,7 @@ export const Login = () => {
             
             <div className="space-y-1">
               <h1 className="text-2xl font-black tracking-tight text-white my-0 leading-none">
-                Sign in to RankHub
+                Sign in to RankerHub
               </h1>
               <p className="text-xs text-slate-400 font-semibold">
                 Analyze your commits, streaks, and ratings.

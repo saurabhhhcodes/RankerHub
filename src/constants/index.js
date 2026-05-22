@@ -1,11 +1,13 @@
 export const sidebarLinks = [
   { label: "Dashboard", path: "/dashboard", icon: "LayoutDashboard" },
-  { label: "GitRank", path: "/gitrank", icon: "Github" },
-  { label: "RankHer", path: "/rankher", icon: "Sparkles" },
-  { label: "CodingPlace", path: "/codingplace", icon: "Code2" },
-  { label: "CodingOwl", path: "/codingowl", icon: "BookOpen" },
-  { label: "Profile", path: "/profile", icon: "User" },
-  { label: "Settings", path: "/settings", icon: "Settings" },
+  { label: "CodingVerse", path: "/dashboard/codingverse", icon: "Code2" },
+  { label: "GitRank", path: "/dashboard/gitrank", icon: "Github" },
+  { label: "CodingOwl", path: "/dashboard/codingowl", icon: "BookOpen" },
+  { label: "RankHer", path: "/dashboard/rankher", icon: "Sparkles" },
+  { label: "Achievements", path: "/dashboard/achievements", icon: "Award" },
+  { label: "Profile", path: "/dashboard/profile", icon: "User" },
+  { label: "Settings", path: "/dashboard/settings", icon: "Settings" },
+  { label: "How it works", path: "?modal=how-it-works", icon: "HelpCircle" },
   { label: "About Us", path: "/about", icon: "Info" }
 ];
 

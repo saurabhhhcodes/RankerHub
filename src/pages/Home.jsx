@@ -6,7 +6,6 @@ import {
   Code2,
   BookOpen,
   ArrowRight,
-  TrendingUp,
   Award,
   Users,
   Zap,
@@ -16,7 +15,6 @@ import { Github } from "../components/ui/Icons";
 import { fadeUp, staggerContainer } from "../utils/motion";
 import GradientButton from "../components/ui/GradientButton";
 import Card from "../components/ui/Card";
-import ThemeToggle from "../components/ui/ThemeToggle";
 
 export const Home = () => {
   const features = [
@@ -35,11 +33,11 @@ export const Home = () => {
       path: "/rankher"
     },
     {
-      title: "CodingPlace",
+      title: "CodingVerse",
       description: "Solve daily algorithmic challenges, earn points, and climb the problem-solving ladder.",
       icon: Code2,
       color: "text-purple-500 bg-purple-500/10 border-purple-500/20",
-      path: "/codingplace"
+      path: "/codingverse"
     },
     {
       title: "CodingOwl",
@@ -58,37 +56,11 @@ export const Home = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-300 relative overflow-hidden">
+    <div className="relative w-full overflow-hidden">
       
-      {/* Background Orbs */}
-      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-violet-500/10 dark:bg-violet-600/5 rounded-full blur-[120px] pointer-events-none -z-10 animate-pulse-slow" />
-      <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-blue-500/10 dark:bg-blue-600/5 rounded-full blur-[120px] pointer-events-none -z-10 animate-pulse-slow" />
-
-      {/* Top Navbar mockup for landing */}
-      <header className="h-16 border-b border-slate-200/50 dark:border-slate-800/50 backdrop-blur-md bg-white/40 dark:bg-slate-950/40 sticky top-0 z-30 px-6 max-w-7xl mx-auto flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2.5">
-          <div className="w-8.5 h-8.5 rounded-lg bg-gradient-to-tr from-violet-600 via-indigo-600 to-blue-600 flex items-center justify-center shadow-md">
-            <TrendingUp className="w-4.5 h-4.5 text-white" />
-          </div>
-          <span className="font-extrabold text-lg bg-clip-text text-transparent bg-gradient-to-r from-violet-600 to-blue-500 tracking-tight">
-            RankHub
-          </span>
-        </Link>
-        <div className="flex items-center gap-4">
-          <ThemeToggle />
-          <Link to="/about" className="text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
-            About Us
-          </Link>
-          <Link to="/login" className="text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
-            Sign In
-          </Link>
-          <Link to="/login">
-            <GradientButton size="sm" className="px-4 py-1.5 text-xs rounded-lg">
-              Launch Dashboard
-            </GradientButton>
-          </Link>
-        </div>
-      </header>
+      {/* Background Orbs (optimized with radial gradients instead of expensive blur filters) */}
+      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-blob-purple-strong pointer-events-none -z-10 animate-pulse-slow" />
+      <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-blob-blue-strong pointer-events-none -z-10 animate-pulse-slow" />
 
       {/* Hero Section */}
       <section className="py-20 md:py-28 px-6 max-w-6xl mx-auto text-center space-y-8 flex flex-col items-center">
@@ -122,7 +94,7 @@ export const Home = () => {
             variants={fadeUp()}
             className="text-base sm:text-lg md:text-xl text-slate-500 dark:text-slate-400 max-w-2xl font-medium"
           >
-            RankHub tracks commits, streaks, and problem-solving to gamify your software development journey. Build habits, spot-light contributions, and earn badges.
+            RankerHub tracks commits, streaks, and problem-solving to gamify your software development journey. Build habits, spot-light contributions, and earn badges.
           </motion.p>
 
           {/* CTA Buttons */}
@@ -132,10 +104,10 @@ export const Home = () => {
           >
             <Link to="/login">
               <GradientButton className="w-full sm:w-auto flex items-center justify-center">
-                View Dashboard <ArrowRight className="w-4 h-4 ml-1" />
+                Get Started <ArrowRight className="w-4 h-4 ml-1" />
               </GradientButton>
             </Link>
-            <Link to="/login">
+            <Link to="/gitrank">
               <GradientButton variant="secondary" className="w-full sm:w-auto">
                 Explore GitRank
               </GradientButton>
@@ -167,7 +139,7 @@ export const Home = () => {
       </section>
 
       {/* Features Grid Section */}
-      <section className="py-20 px-6 max-w-6xl mx-auto space-y-12">
+      <section id="features" className="py-20 px-6 max-w-6xl mx-auto space-y-12">
         <div className="text-center space-y-2">
           <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white my-0">
             Core Ranking Modules
@@ -203,17 +175,6 @@ export const Home = () => {
           })}
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="py-12 border-t border-slate-200/50 dark:border-slate-800/50 text-center text-xs text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-950 transition-colors">
-        <div className="flex justify-center gap-6 mb-4">
-          <Link to="/about" className="hover:text-slate-900 dark:hover:text-slate-100 transition-colors font-semibold">About Us</Link>
-          <a href="#" className="hover:text-slate-900 dark:hover:text-slate-100 transition-colors font-semibold">Terms of Service</a>
-          <a href="#" className="hover:text-slate-900 dark:hover:text-slate-100 transition-colors font-semibold">Privacy Policy</a>
-        </div>
-        <p className="font-semibold">© 2026 RankHub. Built with React + Vite + TailwindCSS.</p>
-        <p className="mt-2">Premium developer ranking dashboard. All features simulate active states.</p>
-      </footer>
 
     </div>
   );

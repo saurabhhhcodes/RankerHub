@@ -26,7 +26,7 @@ RankerHub is a developer ranking and coding platform that combines GitHub activi
 
 ```bash
 git clone <repo-url>
-cd RankHub
+cd RankerHub
 npm install
 npm run dev
 ```

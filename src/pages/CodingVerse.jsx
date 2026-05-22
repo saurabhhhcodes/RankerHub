@@ -1,10 +1,10 @@
 import React from "react";
-import { Code2, Target, CheckCircle2, ChevronRight, Play, Award, HelpCircle } from "lucide-react";
+import { Code2, Target, CheckCircle2, Award, Play } from "lucide-react";
 import Card from "../components/ui/Card";
 import SectionHeader from "../components/ui/SectionHeader";
 import ComingSoonCard from "../components/ui/ComingSoonCard";
 
-export const CodingPlace = () => {
+export const CodingVerse = () => {
   const categories = [
     { name: "Arrays & Hashing", count: 48, solved: 12, icon: Target },
     { name: "Two Pointers & Sliders", count: 32, solved: 8, icon: Code2 },
@@ -23,7 +23,7 @@ export const CodingPlace = () => {
     <div className="space-y-8">
       {/* Page Header */}
       <SectionHeader
-        title="CodingPlace Arena"
+        title="CodingVerse Arena"
         subtitle="Test your engineering skills with daily coding assignments, mock interviews, and tournaments."
         badge="Practice Hub"
       />
@@ -169,4 +169,4 @@ export const CodingPlace = () => {
   );
 };
 
-export default CodingPlace;
+export default CodingVerse;

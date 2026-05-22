@@ -17,10 +17,10 @@ export const DashboardLayout = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-300 relative overflow-hidden flex">
-      {/* Background Premium Animated Blobs */}
-      <div className="absolute top-10 left-10 w-72 h-72 md:w-96 md:h-96 bg-violet-500/5 dark:bg-violet-600/5 rounded-full blur-[100px] pointer-events-none animate-blob -z-10" />
-      <div className="absolute top-1/3 right-10 w-72 h-72 md:w-96 md:h-96 bg-indigo-500/5 dark:bg-indigo-600/5 rounded-full blur-[100px] pointer-events-none animate-blob [animation-delay:2s] -z-10" />
-      <div className="absolute bottom-10 left-1/3 w-72 h-72 md:w-96 md:h-96 bg-blue-500/5 dark:bg-blue-600/5 rounded-full blur-[100px] pointer-events-none animate-blob [animation-delay:4s] -z-10" />
+      {/* Background Premium Animated Blobs (optimized with radial gradients instead of expensive blur filters) */}
+      <div className="absolute top-10 left-10 w-72 h-72 md:w-96 md:h-96 bg-blob-purple pointer-events-none animate-blob -z-10 transform-gpu" />
+      <div className="absolute top-1/3 right-10 w-72 h-72 md:w-96 md:h-96 bg-blob-indigo pointer-events-none animate-blob [animation-delay:2s] -z-10 transform-gpu" />
+      <div className="absolute bottom-10 left-1/3 w-72 h-72 md:w-96 md:h-96 bg-blob-blue pointer-events-none animate-blob [animation-delay:4s] -z-10 transform-gpu" />
 
       {/* Collapsible Sidebar (Desktop) */}
       <Sidebar isCollapsed={isCollapsed} toggleCollapse={toggleCollapse} />
@@ -30,8 +30,8 @@ export const DashboardLayout = () => {
 
       {/* Main Content Area */}
       <div
-        className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${
-          isCollapsed ? "md:pl-20" : "md:pl-64"
+        className={`flex-1 flex flex-col min-h-screen transition-[padding-left] duration-300 ease-in-out ${
+          isCollapsed ? "md:pl-[76px]" : "md:pl-[260px]"
         }`}
       >
         {/* Navbar */}

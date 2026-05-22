@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -12,10 +12,13 @@ import {
   LogOut,
   X,
   TrendingUp,
-  Info
+  Info,
+  HelpCircle,
+  Award
 } from "lucide-react";
 import { Github } from "../ui/Icons";
-import { sidebarLinks } from "../../constants";
+import { sidebarLinks, systemBadges } from "../../constants";
+import LogoutConfirmModal from "../ui/LogoutConfirmModal";
 
 const iconMap = {
   Home,
@@ -27,97 +30,122 @@ const iconMap = {
   User,
   Settings,
   LogOut,
-  Info
+  Info,
+  HelpCircle,
+  Award
 };
 
 export const MobileSidebar = ({ isOpen, close }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const handleLogout = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = () => {
+    setShowLogoutConfirm(false);
     close();
     navigate("/");
   };
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* Backdrop Overlay */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.5 }}
-            exit={{ opacity: 0 }}
-            onClick={close}
-            className="fixed inset-0 bg-black z-40 md:hidden"
-          />
+    <>
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            {/* Backdrop Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+              exit={{ opacity: 0 }}
+              onClick={close}
+              className="fixed inset-0 bg-black z-40 md:hidden"
+            />
 
-          {/* Drawer Sidebar */}
-          <motion.aside
-            initial={{ x: "-100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "-100%" }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed top-0 bottom-0 left-0 w-72 max-w-[80vw] z-50 bg-slate-950 border-r border-slate-800/50 shadow-2xl flex flex-col md:hidden transition-colors duration-300 text-slate-400"
-          >
-            {/* Header */}
-            <div className="h-16 flex items-center justify-between px-5 border-b border-slate-800/50">
-              <Link to="/" onClick={close} className="flex items-center gap-2.5">
-                <div className="w-8.5 h-8.5 rounded-lg bg-gradient-to-tr from-violet-600 via-indigo-600 to-blue-600 flex items-center justify-center shadow-md">
-                  <TrendingUp className="w-4.5 h-4.5 text-white" />
-                </div>
-                <span className="font-extrabold text-lg bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-blue-400 tracking-tight">
-                  RankHub
-                </span>
-              </Link>
+            {/* Drawer Sidebar */}
+            <motion.aside
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="fixed top-0 bottom-0 left-0 w-72 max-w-[80vw] z-50 bg-slate-950 border-r border-slate-800/50 shadow-2xl flex flex-col md:hidden transition-colors duration-300 text-slate-400"
+            >
+              {/* Header */}
+              <div className="h-16 flex items-center justify-between px-5 border-b border-slate-800/50">
+                <Link to="/" onClick={close} className="flex items-center gap-2.5">
+                  <div className="w-8.5 h-8.5 rounded-lg bg-gradient-to-tr from-violet-600 via-indigo-600 to-blue-600 flex items-center justify-center shadow-md">
+                    <TrendingUp className="w-4.5 h-4.5 text-white" />
+                  </div>
+                  <span className="font-extrabold text-lg bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-blue-400 tracking-tight">
+                    RankerHub
+                  </span>
+                </Link>
 
-              {/* Close button */}
-              <button
-                onClick={close}
-                className="p-1.5 rounded-lg border border-slate-800/50 hover:bg-slate-800 text-slate-500 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+                {/* Close button */}
+                <button
+                  onClick={close}
+                  className="p-1.5 rounded-lg border border-slate-800/50 hover:bg-slate-800 text-slate-500 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
 
-            {/* Links */}
-            <div className="flex-1 py-6 px-4 space-y-1.5 overflow-y-auto">
-              {sidebarLinks.map((link) => {
-                const IconComponent = iconMap[link.icon] || Home;
-                const isActive = location.pathname === link.path;
+              {/* Links */}
+              <div className="flex-1 py-6 px-4 space-y-1.5 overflow-y-auto">
+                {sidebarLinks.map((link) => {
+                  const IconComponent = iconMap[link.icon] || Home;
+                  const isActive = location.pathname === link.path;
 
-                return (
-                  <Link key={link.path} to={link.path} onClick={close} className="block relative">
-                    <div
-                      className={`
-                        flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold transition-all duration-200
-                        ${isActive
-                          ? "text-white bg-gradient-to-r from-violet-600 to-indigo-600 shadow-[0_4px_15px_rgba(124,58,237,0.25)]"
-                          : "text-slate-400 hover:text-slate-100 hover:bg-slate-800/40"}
-                      `}
+                  return (
+                    <Link
+                      key={link.path}
+                      to={link.path}
+                      onClick={close}
+                      className="block relative"
+                      {...(link.path === "/about" ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                     >
-                      <IconComponent className={`w-5 h-5 ${isActive ? "text-white" : "text-slate-400 group-hover:text-violet-400 transition-colors"}`} />
-                      <span>{link.label}</span>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
+                      <div
+                        className={`
+                          flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold transition-colors duration-205
+                          ${isActive
+                            ? "text-white bg-gradient-to-r from-violet-600 to-indigo-600 shadow-[0_4px_15px_rgba(124,58,237,0.25)]"
+                            : "text-slate-400 hover:text-slate-100 hover:bg-slate-800/40"}
+                        `}
+                      >
+                        <IconComponent className={`w-5 h-5 ${isActive ? "text-white" : "text-slate-400 group-hover:text-violet-400 transition-colors"}`} />
+                        <span>{link.label}</span>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
 
-            {/* Logout */}
-            <div className="p-4 border-t border-slate-800/50">
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer group"
-              >
-                <LogOut className="w-5 h-5 text-red-400 group-hover:text-red-300" />
-                <span>Logout</span>
-              </button>
-            </div>
-          </motion.aside>
-        </>
-      )}
-    </AnimatePresence>
+              {/* Logout */}
+              <div className="p-4 border-t border-slate-800/50">
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer group"
+                >
+                  <LogOut className="w-5 h-5 text-red-400 group-hover:text-red-300" />
+                  <span>Logout</span>
+                </button>
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showLogoutConfirm && (
+          <LogoutConfirmModal
+            onClose={() => setShowLogoutConfirm(false)}
+            onConfirm={confirmLogout}
+          />
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 

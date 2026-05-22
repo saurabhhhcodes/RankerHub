@@ -51,7 +51,7 @@ export const Navbar = ({ toggleMobile, isMobileOpen }) => {
   };
 
   return (
-    <nav className="h-16 border-b border-slate-200/50 dark:border-slate-800/50 bg-white/50 dark:bg-slate-950/50 backdrop-blur-md sticky top-0 z-30 px-4 md:px-6 flex items-center justify-between transition-colors duration-300">
+    <nav className="sticky top-0 z-30 h-16 border-b border-slate-200/50 dark:border-slate-800/50 bg-white/70 dark:bg-slate-950/70 backdrop-blur-md shadow-sm transition-all duration-300 px-4 md:px-6 flex items-center justify-between">
       
       {/* Left side: Mobile Toggle & Greeting */}
       <div className="flex items-center gap-3">

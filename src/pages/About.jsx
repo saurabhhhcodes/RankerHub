@@ -1,144 +1,248 @@
 import React from "react";
-import { Shield, Users, Trophy, Code2, Award, Cpu, Info } from "lucide-react";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import {
+  Mail,
+  ArrowLeft,
+  TrendingUp,
+  Code2,
+  Sparkles,
+  BookOpen,
+  GitBranch,
+  Info,
+  Shield,
+  Layers,
+  Heart
+} from "lucide-react";
+import { Github, Linkedin, Instagram } from "../components/ui/Icons";
 import Card from "../components/ui/Card";
-import SectionHeader from "../components/ui/SectionHeader";
 
 export const About = () => {
-  const stats = [
-    { label: "Community Members", value: "250K+", icon: Users, color: "text-violet-500 bg-violet-500/10 border-violet-500/20" },
-    { label: "XP Points Issued", value: "85M+", icon: Trophy, color: "text-amber-500 bg-amber-500/10 border-amber-500/20" },
-    { label: "Algorithms Compiled", value: "12M+", icon: Code2, color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20" },
-    { label: "Open-Source Integrations", value: "1,500+", icon: Cpu, color: "text-blue-500 bg-blue-500/10 border-blue-500/20" }
+  const coreModules = [
+    {
+      title: "GitRank",
+      desc: "Live Git analytics dashboard tracking pull requests, commits, and peer code reviews dynamically.",
+      icon: GitBranch,
+      color: "text-blue-400 bg-blue-500/10 border-blue-500/20"
+    },
+    {
+      title: "CodingVerse",
+      desc: "Competitive algorithmic sandbox containing daily code challenges, test suites, and XP tracking.",
+      icon: Code2,
+      color: "text-purple-400 bg-purple-500/10 border-purple-500/20"
+    },
+    {
+      title: "CodingOwl",
+      desc: "Consistency study buddy tracking focus sessions, Pomodoro timers, and streak preservation.",
+      icon: BookOpen,
+      color: "text-orange-400 bg-orange-500/10 border-orange-500/20"
+    },
+    {
+      title: "RankHer",
+      desc: "Specialized initiative dashboard highlighting and celebrating achievements of women in technology.",
+      icon: Sparkles,
+      color: "text-pink-400 bg-pink-500/10 border-pink-500/20"
+    }
   ];
 
-  const team = [
-    { name: "Indresh", role: "Lead Architect & Developer", avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200", bio: "Passionate about full-stack engineering, gamified developer tools, and building responsive, premium UI components." },
-    { name: "Oliver the Owl", role: "Chief Motivation Officer", avatar: "https://images.unsplash.com/photo-1544390158-44754023dd70?auto=format&fit=crop&q=80&w=200", bio: "The brains behind the CodingOwl focus module. Helps developers stay on track and maintain their daily streak goals." }
+  const owners = [
+    {
+      name: "Indresh Suresh",
+      role: "Project Owner & Lead Architect",
+      bio: "Full-stack developer focused on creating performant, interactive web systems and developer environments. Passionate about software craftsmanship, clean UI animations, and automated ranking models.",
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200", // High quality profile image
+      links: {
+        github: "https://github.com/indresh404",
+        linkedin: "https://linkedin.com",
+        instagram: "https://instagram.com",
+        email: "mailto:indresh@rankerhub.dev"
+      }
+    },
+    {
+      name: "Divya Sharma",
+      role: "Project Owner & UX Director",
+      bio: "Product designer and manager specialising in community growth, layout optimization, and accessibility. Dedicated to building engaging developer ecosystems and scaling inclusive open-source project initiatives.",
+      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200", // High quality profile image
+      links: {
+        github: "https://github.com",
+        linkedin: "https://linkedin.com",
+        instagram: "https://instagram.com",
+        email: "mailto:divya@rankerhub.dev"
+      }
+    }
   ];
 
   return (
-    <div className="space-y-8">
-      {/* Page Header */}
-      <SectionHeader
-        title="About RankHub"
-        subtitle="Exploring the mission, values, and architectural details powering the premium developer leaderboard platform."
-        badge="Platform Mission"
-        badgeColor="bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20"
-      />
+    <div className="min-h-screen bg-[#070B16] text-slate-100 relative overflow-hidden flex flex-col font-sans">
+      
+      {/* Background Animated Blobs (optimized with radial gradients instead of expensive blur filters) */}
+      <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-blob-purple-strong pointer-events-none animate-blob transform-gpu" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-blob-blue-strong pointer-events-none animate-blob [animation-delay:3s] transform-gpu" />
+      <div className="absolute top-[35%] left-[25%] w-[40vw] h-[40vw] bg-blob-indigo-strong pointer-events-none animate-pulse-slow transform-gpu" />
 
-      {/* Intro section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="p-6 md:col-span-2 relative overflow-hidden flex flex-col justify-between">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500/5 rounded-full blur-2xl pointer-events-none" />
-          <div className="space-y-4">
-            <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">Our Vision</h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-              RankHub was built with a simple goal: to make developer analytics and contribution tracking exciting, engaging, and motivating. By integrating daily Git milestones, problem-solving, habit formation, and equity-focused initiatives, RankHub brings a premium gamified experience to modern engineering teams.
-            </p>
-            <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-              We believe coding is more than a job—it's a journey of continuous learning. By visualizing progress and rewarding consistency, we empower developers to claim their spots on leaderboards, verify their achievements, and spotlight their craft.
-            </p>
+      {/* Standalone Header */}
+      <header className="w-full h-16 border-b border-slate-800/40 bg-slate-950/40 backdrop-blur-xl flex items-center justify-between px-6 sticky top-0 z-50">
+        <Link to="/" className="flex items-center gap-2.5">
+          <div className="w-8.5 h-8.5 rounded-lg bg-gradient-to-tr from-violet-600 via-indigo-600 to-blue-600 flex items-center justify-center shadow-md">
+            <TrendingUp className="w-4.5 h-4.5 text-white" />
           </div>
-          <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center gap-3 text-xs font-semibold text-slate-400">
-            <Shield className="w-4 h-4 text-violet-500" />
-            <span>Secure analytics, zero tracking data leakage, public verify systems.</span>
-          </div>
-        </Card>
+          <span className="font-extrabold text-lg bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-blue-400 tracking-tight">
+            RankerHub
+          </span>
+        </Link>
 
-        <Card className="p-6 bg-gradient-to-br from-violet-600 to-indigo-700 text-white border-none shadow-[0_10px_30px_rgba(124,58,237,0.25)] flex flex-col justify-between">
-          <div className="space-y-4">
-            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-md">
-              <Award className="w-5 h-5 text-white" />
+        <Link
+          to="/"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-800 hover:bg-slate-800/50 text-slate-300 hover:text-white transition duration-200 text-xs font-bold"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" /> Back to Home
+        </Link>
+      </header>
+
+      {/* Main Container */}
+      <main className="flex-1 max-w-5xl w-full mx-auto px-6 py-12 md:py-16 space-y-16 relative z-10">
+        
+        {/* Title Block */}
+        <div className="text-center space-y-4 max-w-2xl mx-auto">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-violet-500/10 text-violet-400 border border-violet-500/20">
+            About the Project
+          </span>
+          <h1 className="text-4xl sm:text-5xl font-black tracking-tight leading-[1.1] text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-indigo-300 to-blue-400 my-0">
+            Developer Gamification
+          </h1>
+          <p className="text-sm md:text-base text-slate-400 leading-relaxed font-semibold">
+            RankerHub is a premium performance-driven dashboard and algorithmic arena built to track coding frequency, analyze Git activity, build consistency streaks, and verify developer progress.
+          </p>
+        </div>
+
+        {/* Project Description & Modules */}
+        <section className="space-y-8">
+          <Card className="p-6 bg-slate-950/30 border-slate-800/50 backdrop-blur-md">
+            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+              <Info className="w-5 h-5 text-violet-400" /> Platform Overview
+            </h2>
+            <div className="space-y-4 text-slate-400 text-sm leading-relaxed font-semibold">
+              <p>
+                Created as a modern gamified utility, RankerHub connects developers directly to automated commit metrics, algorithm sandboxes, and social verification badges. The dashboard integrates seamlessly with public development timelines to compile a global XP rating.
+              </p>
+              <p>
+                Our system prioritizes data isolation, focusing only on public contribution logs, lines of code changed, and study companion focus timelines. Whether checking daily quests or verifying achievements, RankerHub is engineered to empower software developers on their learning journey.
+              </p>
             </div>
-            <h3 className="text-lg font-extrabold leading-tight">Driven by Performance</h3>
-            <p className="text-xs text-violet-100 leading-relaxed font-medium">
-              RankHub runs high-performance ranking engines checking commits, streaks, and focus times. Our clean UI-first setup matches active metrics to create a dynamic developer environment.
-            </p>
-          </div>
-          <div className="pt-4 border-t border-white/20 text-xs font-bold text-violet-200">
-            Version 1.0.0 Stable Build
-          </div>
-        </Card>
-      </div>
+          </Card>
 
-      {/* Metrics grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, idx) => {
-          const Icon = stat.icon;
-          return (
-            <Card key={idx} className="p-4 flex items-center gap-4">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${stat.color} flex-shrink-0`}>
-                <Icon className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="block text-lg font-black text-slate-900 dark:text-white leading-none">
-                  {stat.value}
-                </span>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mt-1">
-                  {stat.label}
-                </span>
-              </div>
-            </Card>
-          );
-        })}
-      </div>
-
-      {/* Core Values Section */}
-      <Card className="p-6">
-        <h3 className="text-xl font-extrabold text-slate-900 dark:text-white mb-6">Core Development Values</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
-          <div className="space-y-2">
-            <h4 className="font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-violet-500" />
-              Gamification & Fun
-            </h4>
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-              Streaks, badges, and avatars keep coding fresh. We make routine habits exciting and rewarding for both junior and senior developers.
-            </p>
-          </div>
-          <div className="space-y-2">
-            <h4 className="font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-pink-500" />
-              Diversity & Representation
-            </h4>
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-              We celebrate all engineers. The RankHer module is dedicated to supporting, highlighting, and advancing women in technical roles.
-            </p>
-          </div>
-          <div className="space-y-2">
-            <h4 className="font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-              Data-Driven Growth
-            </h4>
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-              Visualize developer focus, commits, and algorithmic rankings with detailed breakdowns that encourage incremental improvement.
-            </p>
-          </div>
-        </div>
-      </Card>
-
-      {/* Meet the Creators */}
-      <div className="space-y-4">
-        <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">Meet the Project Leads</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {team.map((member, idx) => (
-            <Card key={idx} className="p-6 flex flex-col sm:flex-row items-center gap-6">
-              <div className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 ring-4 ring-slate-100 dark:ring-slate-800">
-                <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" />
-              </div>
-              <div className="flex-1 space-y-2 text-center sm:text-left">
-                <div>
-                  <h4 className="text-base font-extrabold text-slate-900 dark:text-white">{member.name}</h4>
-                  <span className="text-xs font-semibold text-violet-600 dark:text-violet-400">{member.role}</span>
+          {/* Core Modules Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {coreModules.map((mod, idx) => {
+              const Icon = mod.icon;
+              return (
+                <div
+                  key={idx}
+                  className="p-5 rounded-2xl border border-slate-800/40 bg-slate-900/10 hover:bg-slate-900/20 transition-all duration-300 flex items-start gap-4"
+                >
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${mod.color} flex-shrink-0`}>
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-bold text-white my-0">{mod.title}</h3>
+                    <p className="text-xs text-slate-400 leading-relaxed my-0 font-medium">
+                      {mod.desc}
+                    </p>
+                  </div>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-                  {member.bio}
-                </p>
-              </div>
-            </Card>
-          ))}
-        </div>
-      </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Project Owners Block */}
+        <section className="space-y-8">
+          <div className="text-center space-y-1">
+            <h2 className="text-2xl font-black text-white my-0">Meet the Project Owners</h2>
+            <p className="text-xs text-slate-400 font-semibold">
+              The creative visionaries and architects driving the RankerHub engineering ecosystem.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {owners.map((owner, idx) => (
+              <Card
+                key={idx}
+                className="p-8 bg-slate-950/40 border-slate-800/40 backdrop-blur-2xl hover:border-violet-500/20 transition-all duration-300 flex flex-col justify-between"
+              >
+                <div className="space-y-6">
+                  {/* Owner Header Info */}
+                  <div className="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
+                    <div className="w-16 h-16 rounded-2xl overflow-hidden ring-4 ring-slate-800/40 flex-shrink-0">
+                      <img src={owner.avatar} alt={owner.name} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="text-lg font-extrabold text-white my-0 leading-tight">
+                        {owner.name}
+                      </h3>
+                      <span className="text-xs font-bold text-violet-400 block">
+                        {owner.role}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Bio */}
+                  <p className="text-xs text-slate-400 leading-relaxed font-semibold my-0 text-center sm:text-left">
+                    {owner.bio}
+                  </p>
+                </div>
+
+                {/* Connection Links */}
+                <div className="mt-8 pt-6 border-t border-slate-800/40 flex justify-center sm:justify-start gap-3">
+                  <a
+                    href={owner.links.github}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 rounded-xl border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-white transition duration-200 cursor-pointer"
+                    title="GitHub"
+                  >
+                    <Github className="w-4 h-4" />
+                  </a>
+                  <a
+                    href={owner.links.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 rounded-xl border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-white transition duration-200 cursor-pointer"
+                    title="LinkedIn"
+                  >
+                    <Linkedin className="w-4 h-4" />
+                  </a>
+                  <a
+                    href={owner.links.instagram}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 rounded-xl border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-white transition duration-200 cursor-pointer"
+                    title="Instagram"
+                  >
+                    <Instagram className="w-4 h-4" />
+                  </a>
+                  <a
+                    href={owner.links.email}
+                    className="p-2 rounded-xl border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-white transition duration-200 cursor-pointer"
+                    title="Email Contact"
+                  >
+                    <Mail className="w-4 h-4" />
+                  </a>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </section>
+
+      </main>
+
+      {/* Simple Mini Footer */}
+      <footer className="w-full py-8 border-t border-slate-800/40 text-center text-[10px] text-slate-500 font-bold bg-slate-950/20 relative z-10">
+        <p className="my-0 flex items-center justify-center gap-1">
+          Made with <Heart className="w-3 h-3 text-red-500 fill-red-500" /> by Indresh Suresh & Divya Sharma © 2026 RankerHub.
+        </p>
+      </footer>
+
     </div>
   );
 };

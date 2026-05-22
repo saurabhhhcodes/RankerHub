@@ -1,20 +1,23 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
+import PublicLayout from "../layouts/PublicLayout";
 import DashboardLayout from "../layouts/DashboardLayout";
 import Home from "../pages/Home";
 import Dashboard from "../pages/Dashboard";
 import GitRank from "../pages/GitRank";
 import RankHer from "../pages/RankHer";
-import CodingPlace from "../pages/CodingPlace";
+import CodingVerse from "../pages/CodingVerse";
 import CodingOwl from "../pages/CodingOwl";
 import Profile from "../pages/Profile";
 import Login from "../pages/Login";
 import NotFound from "../pages/NotFound";
+import Achievements from "../pages/Achievements";
 import About from "../pages/About";
 import ComingSoonCard from "../components/ui/ComingSoonCard";
+import GlobalModals from "../components/ui/GlobalModals";
 import { Settings as SettingsIcon } from "lucide-react";
 
-// A inline settings page to keep route integrated
+// An inline settings page to keep route integrated
 const SettingsPage = () => (
   <div className="space-y-6">
     <ComingSoonCard
@@ -35,26 +38,41 @@ const SettingsPage = () => (
 
 export const AppRoutes = () => {
   return (
-    <Routes>
-      {/* Public Pages */}
-      <Route path="/" element={<Home />} />
-      <Route path="/login" element={<Login />} />
-      
-      {/* Layout dashboard sub-pages */}
-      <Route element={<DashboardLayout />}>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/gitrank" element={<GitRank />} />
-        <Route path="/rankher" element={<RankHer />} />
-        <Route path="/codingplace" element={<CodingPlace />} />
-        <Route path="/codingowl" element={<CodingOwl />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/settings" element={<SettingsPage />} />
-      </Route>
+    <>
+      <Routes>
+        {/* Public Site Layout & Pages */}
+        <Route element={<PublicLayout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/gitrank" element={<GitRank />} />
+          <Route path="/rankher" element={<RankHer />} />
+          <Route path="/codingverse" element={<CodingVerse />} />
+          <Route path="/codingowl" element={<CodingOwl />} />
+        </Route>
 
-      {/* 404 Catch All */}
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+        {/* Standalone About Us page */}
+        <Route path="/about" element={<About />} />
+
+        {/* Public Login page (standalone) */}
+        <Route path="/login" element={<Login />} />
+        
+        {/* Layout dashboard sub-pages */}
+        <Route element={<DashboardLayout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard/gitrank" element={<GitRank />} />
+          <Route path="/dashboard/rankher" element={<RankHer />} />
+          <Route path="/dashboard/achievements" element={<Achievements />} />
+          <Route path="/dashboard/codingverse" element={<CodingVerse />} />
+          <Route path="/dashboard/codingowl" element={<CodingOwl />} />
+          <Route path="/dashboard/profile" element={<Profile />} />
+          <Route path="/dashboard/settings" element={<SettingsPage />} />
+
+        </Route>
+
+        {/* 404 Catch All */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      <GlobalModals />
+    </>
   );
 };
 

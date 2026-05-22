@@ -3,9 +3,9 @@ export const activityFeed = [
     id: "act-1",
     user: "You",
     type: "commit",
-    detail: "Pushed 5 commits to origin/main on RankHub",
+    detail: "Pushed 5 commits to origin/main on RankerHub",
     time: "2 hours ago",
-    project: "RankHub",
+    project: "RankerHub",
     points: 50
   },
   {
@@ -23,7 +23,7 @@ export const activityFeed = [
     type: "challenge",
     detail: "Solved 'Valid Parentheses' (Medium) challenge in JS",
     time: "6 hours ago",
-    project: "CodingPlace",
+    project: "CodingVerse",
     points: 40
   },
   {
@@ -32,7 +32,7 @@ export const activityFeed = [
     type: "pr_merge",
     detail: "Merged PR #12: Glassmorphism core CSS rules",
     time: "1 day ago",
-    project: "RankHub",
+    project: "RankerHub",
     points: 80
   },
   {

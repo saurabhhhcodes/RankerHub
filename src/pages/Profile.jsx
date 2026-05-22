@@ -24,7 +24,7 @@ export const Profile = () => {
 
   const handleShareProfile = () => {
     // Copy fake link
-    navigator.clipboard.writeText("https://rankhub.dev/indresh45");
+    navigator.clipboard.writeText("https://rankerhub.dev/indresh45");
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -207,7 +207,7 @@ export const Profile = () => {
 
           <div className="mt-6 flex items-center gap-1 text-[10px] font-black text-violet-600 dark:text-violet-400 bg-white/70 dark:bg-slate-900/60 border border-violet-500/20 px-3 py-1 rounded-xl shadow-sm">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-            RankHub Verified Member
+            RankerHub Verified Member
           </div>
         </Card>
 

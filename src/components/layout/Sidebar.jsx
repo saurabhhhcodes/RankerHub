@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -13,10 +13,13 @@ import {
   ChevronLeft,
   ChevronRight,
   TrendingUp,
-  Info
+  Info,
+  HelpCircle,
+  Award
 } from "lucide-react";
 import { Github } from "../ui/Icons";
-import { sidebarLinks } from "../../constants";
+import { sidebarLinks, systemBadges } from "../../constants";
+import LogoutConfirmModal from "../ui/LogoutConfirmModal";
 
 const iconMap = {
   Home,
@@ -28,111 +31,136 @@ const iconMap = {
   User,
   Settings,
   LogOut,
-  Info
+  Info,
+  HelpCircle,
+  Award
 };
 
 export const Sidebar = ({ isCollapsed, toggleCollapse }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const handleLogout = () => {
-    // Redirect to home page
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = () => {
+    setShowLogoutConfirm(false);
     navigate("/");
   };
 
   return (
-    <motion.aside
-      animate={{ width: isCollapsed ? 76 : 260 }}
-      transition={{ type: "spring", stiffness: 300, damping: 25 }}
-      className="hidden md:flex flex-col h-screen fixed left-0 top-0 z-40 border-r border-slate-800/50 bg-slate-950/95 backdrop-blur-xl transition-colors duration-300"
-    >
-      {/* Sidebar Header / Logo */}
-      <div className="h-16 flex items-center justify-between px-4 border-b border-slate-800/50">
-        <Link to="/" className="flex items-center gap-2.5 overflow-hidden">
-          <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-gradient-to-tr from-violet-600 via-indigo-600 to-blue-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-            <TrendingUp className="w-5 h-5 text-white" />
-          </div>
-          <AnimatePresence>
+    <>
+      <motion.aside
+        animate={{ width: isCollapsed ? 76 : 260 }}
+        transition={{ duration: 0.3, ease: "easeInOut" }}
+        className="hidden md:flex flex-col h-screen fixed left-0 top-0 z-40 border-r border-slate-800/50 bg-slate-950 backdrop-blur-xl transition-colors duration-300 text-slate-400"
+      >
+        {/* Sidebar Header / Logo */}
+        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-800/50">
+          <Link to="/" className="flex items-center gap-2.5 overflow-hidden">
+            <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-gradient-to-tr from-violet-600 via-indigo-600 to-blue-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+              <TrendingUp className="w-5 h-5 text-white" />
+            </div>
+            <AnimatePresence>
+              {!isCollapsed && (
+                <motion.span
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  className="font-extrabold text-xl bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-blue-400 tracking-tight"
+                >
+                  RankerHub
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </Link>
+
+          {/* Collapse Button */}
+          <button
+            onClick={toggleCollapse}
+            className="p-1.5 rounded-lg border border-slate-800/50 hover:bg-slate-800/60 text-slate-500 hover:text-slate-200 cursor-pointer"
+          >
+            {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          </button>
+        </div>
+
+        {/* Navigation Links */}
+        <div className="flex-1 py-6 px-3 space-y-1.5 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-800">
+          {sidebarLinks.map((link) => {
+            const IconComponent = iconMap[link.icon] || Home;
+            const isActive = location.pathname === link.path;
+
+            return (
+              <Link
+                key={link.path}
+                to={link.path}
+                className="block relative"
+                {...(link.path === "/about" ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+              >
+                <motion.div
+                  whileHover={{ x: 4 }}
+                  className={`
+                    flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-colors duration-200 group
+                    ${isActive 
+                      ? "text-white bg-gradient-to-r from-violet-600 to-indigo-600 shadow-[0_4px_15px_rgba(124,58,237,0.25)]" 
+                      : "text-slate-400 hover:text-slate-100 hover:bg-slate-800/50"}
+                  `}
+                >
+                  <IconComponent className={`w-5 h-5 flex-shrink-0 ${isActive ? "text-white" : "text-slate-400 group-hover:text-violet-400 transition-colors"}`} />
+                  
+                  {!isCollapsed && (
+                    <motion.span
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="truncate"
+                    >
+                      {link.label}
+                    </motion.span>
+                  )}
+
+                  {/* Hover Glow Background indicator */}
+                  {!isActive && (
+                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-0 group-hover:h-1/2 rounded-full bg-violet-600 transition-all duration-300" />
+                  )}
+                </motion.div>
+              </Link>
+            );
+          })}
+
+
+        </div>
+
+        {/* Sidebar Footer / Logout */}
+        <div className="p-3 border-t border-slate-800/50">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-red-400 hover:bg-red-500/10 transition-colors duration-200 cursor-pointer group"
+          >
+            <LogOut className="w-5 h-5 flex-shrink-0 text-red-400 group-hover:text-red-300" />
             {!isCollapsed && (
               <motion.span
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                className="font-extrabold text-xl bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-blue-400 tracking-tight"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="truncate"
               >
-                RankHub
+                Logout
               </motion.span>
             )}
-          </AnimatePresence>
-        </Link>
+          </button>
+        </div>
+      </motion.aside>
 
-        {/* Collapse Button */}
-        <button
-          onClick={toggleCollapse}
-          className="p-1.5 rounded-lg border border-slate-800/50 hover:bg-slate-800/60 text-slate-500 hover:text-slate-200 cursor-pointer"
-        >
-          {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-        </button>
-      </div>
-
-      {/* Navigation Links */}
-      <div className="flex-1 py-6 px-3 space-y-1.5 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-800">
-        {sidebarLinks.map((link) => {
-          const IconComponent = iconMap[link.icon] || Home;
-          const isActive = location.pathname === link.path;
-
-          return (
-            <Link key={link.path} to={link.path} className="block relative">
-              <motion.div
-                whileHover={{ x: 4 }}
-                className={`
-                  flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-all duration-200 group
-                  ${isActive 
-                    ? "text-white bg-gradient-to-r from-violet-600 to-indigo-600 shadow-[0_4px_15px_rgba(124,58,237,0.25)]" 
-                    : "text-slate-400 hover:text-slate-100 hover:bg-slate-800/50"}
-                `}
-              >
-                <IconComponent className={`w-5 h-5 flex-shrink-0 ${isActive ? "text-white" : "text-slate-400 group-hover:text-violet-400 transition-colors"}`} />
-                
-                {!isCollapsed && (
-                  <motion.span
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="truncate"
-                  >
-                    {link.label}
-                  </motion.span>
-                )}
-
-                {/* Hover Glow Background indicator */}
-                {!isActive && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-0 group-hover:h-1/2 rounded-full bg-violet-600 transition-all duration-300" />
-                )}
-              </motion.div>
-            </Link>
-          );
-        })}
-      </div>
-
-      {/* Sidebar Footer / Logout */}
-      <div className="p-3 border-t border-slate-800/50">
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold text-red-400 hover:bg-red-500/10 transition-colors duration-200 cursor-pointer group"
-        >
-          <LogOut className="w-5 h-5 flex-shrink-0 text-red-400 group-hover:text-red-300" />
-          {!isCollapsed && (
-            <motion.span
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="truncate"
-            >
-              Logout
-            </motion.span>
-          )}
-        </button>
-      </div>
-    </motion.aside>
+      <AnimatePresence>
+        {showLogoutConfirm && (
+          <LogoutConfirmModal
+            onClose={() => setShowLogoutConfirm(false)}
+            onConfirm={confirmLogout}
+          />
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 

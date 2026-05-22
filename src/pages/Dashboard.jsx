@@ -184,7 +184,7 @@ export const Dashboard = () => {
               Daily Arena Challenges
             </h3>
             <p className="text-xs text-slate-400 dark:text-slate-500">
-              Solve to boost your CodingPlace global rating points.
+              Solve to boost your CodingVerse global rating points.
             </p>
           </div>
 
@@ -214,7 +214,7 @@ export const Dashboard = () => {
                   <button
                     disabled
                     className="px-3 py-1 text-[10px] font-bold rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-300/10 cursor-not-allowed"
-                    title="Solve in CodingPlace"
+                    title="Solve in CodingVerse"
                   >
                     Solve
                   </button>
