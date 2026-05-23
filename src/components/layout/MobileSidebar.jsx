@@ -14,7 +14,8 @@ import {
   TrendingUp,
   Info,
   HelpCircle,
-  Award
+  Award,
+  UsersRound
 } from "lucide-react";
 import { Github } from "../ui/Icons";
 import { sidebarLinks, systemBadges } from "../../constants";
@@ -32,7 +33,13 @@ const iconMap = {
   LogOut,
   Info,
   HelpCircle,
-  Award
+  Award,
+  UsersRound
+};
+
+const isLinkActive = (pathname, path) => {
+  if (path === "/dashboard") return pathname === path;
+  return pathname === path || pathname.startsWith(`${path}/`);
 };
 
 export const MobileSidebar = ({ isOpen, close }) => {
@@ -96,7 +103,7 @@ export const MobileSidebar = ({ isOpen, close }) => {
               <div className="flex-1 py-6 px-4 space-y-1.5 overflow-y-auto">
                 {sidebarLinks.map((link) => {
                   const IconComponent = iconMap[link.icon] || Home;
-                  const isActive = location.pathname === link.path;
+                  const isActive = isLinkActive(location.pathname, link.path);
 
                   return (
                     <Link
