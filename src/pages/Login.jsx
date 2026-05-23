@@ -40,7 +40,17 @@ export const Login = () => {
         className="w-full max-w-md relative z-10"
       >
         <Card className="backdrop-blur-2xl bg-slate-950/40 border-slate-800/40 p-8 shadow-2xl space-y-6">
-          
+
+	{/* Back to Home */}
+          <div className="flex justify-start -mb-2">
+            
+              href="/"
+              className="group flex items-center gap-1 text-xs text-slate-400 hover:text-violet-400 transition-colors duration-200 font-semibold"
+            >
+              <span className="inline-block transition-transform duration-200 group-hover:-translate-x-1">←</span>
+              Back to Home
+            </a>
+          </div>       
           {/* Logo Brand Header */}
           <div className="text-center space-y-3">
             <div className="inline-flex w-12 h-12 rounded-2xl bg-gradient-to-tr from-violet-600 via-indigo-600 to-blue-600 items-center justify-center shadow-lg shadow-indigo-500/20 mx-auto">
