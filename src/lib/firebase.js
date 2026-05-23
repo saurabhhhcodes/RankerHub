@@ -105,13 +105,13 @@ export const signInWithGitHub = async () => {
     console.error("GitHub sign-in error:", error);
     // Handle specific errors
     if (error.code === 'auth/account-exists-with-different-credential') {
-      throw new Error('An account already exists with the same email address but different sign-in credentials.');
+      throw new Error('An account already exists with the same email address but different sign-in credentials.', { cause: error });
     }
     if (error.code === 'auth/popup-closed-by-user') {
-      throw new Error('Sign-in popup was closed before completing.');
+      throw new Error('Sign-in popup was closed before completing.', { cause: error });
     }
     if (error.code === 'auth/popup-blocked') {
-      throw new Error('Sign-in popup was blocked by the browser. Please allow popups for this site.');
+      throw new Error('Sign-in popup was blocked by the browser. Please allow popups for this site.', { cause: error });
     }
     throw error;
   }

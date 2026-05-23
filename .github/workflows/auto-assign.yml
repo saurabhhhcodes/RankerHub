@@ -1,0 +1,34 @@
+name: Auto Assign Reviewer
+
+on:
+  pull_request:
+    types: [opened, ready_for_review]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  auto-assign:
+    name: Auto Assign Reviewer
+    runs-on: ubuntu-latest
+    steps:
+      - name: Request Reviewer
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prAuthor = context.payload.pull_request.user.login;
+            if (prAuthor !== 'indresh404') {
+              try {
+                await github.rest.pulls.requestReviewers({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: context.issue.number,
+                  reviewers: ['indresh404']
+                });
+                console.log("Successfully requested review from indresh404");
+              } catch (error) {
+                console.log("Failed to assign reviewer: ", error.message);
+              }
+            } else {
+              console.log("PR author is indresh404, skipping review request.");
+            }
