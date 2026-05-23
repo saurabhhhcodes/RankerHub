@@ -1,47 +1,62 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { TrendingUp, Mail, Lock, ShieldCheck, ArrowRight } from "lucide-react";
+import { ShieldCheck, ArrowRight, AlertCircle, Sparkles } from "lucide-react";
+import { Github } from "../components/ui/Icons";
 import Card from "../components/ui/Card";
 import GradientButton from "../components/ui/GradientButton";
+import { signInWithGitHub } from "../lib/firebase";
 
 export const Login = () => {
-  const [email, setEmail] = useState("indresh@rankerhub.dev");
-  const [password, setPassword] = useState("••••••••••••");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleSignIn = (e) => {
+  const handleGithubSignIn = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate minor transition delay for premium loader response
-    setTimeout(() => {
-      setIsLoading(false);
+    setError("");
+    
+    try {
+      const result = await signInWithGitHub();
+      console.log("User signed in:", result.user.email);
       navigate("/dashboard");
-    }, 1200);
+    } catch (error) {
+      console.error("GitHub sign-in error:", error);
+      setError(error.message || "Failed to sign in with GitHub. Please try again.");
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[#090D1A] text-slate-100 flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-300">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-[#090D1A] dark:via-[#0A0F1F] dark:to-[#0B1022] text-slate-900 dark:text-slate-100 flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-300">
       
-      {/* Premium Rotating Background Blobs (optimized with radial gradients instead of expensive blur filters) */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-blob-purple-strong pointer-events-none animate-blob transform-gpu" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-blob-blue-strong pointer-events-none animate-blob [animation-delay:3s] transform-gpu" />
-      <div className="absolute top-[40%] left-[30%] w-[30vw] h-[30vw] bg-blob-indigo-strong pointer-events-none animate-pulse-slow transform-gpu" />
+      {/* Light Mode Enhanced Background Orbs */}
+      <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] bg-gradient-to-br from-violet-200/40 via-purple-200/30 to-indigo-200/40 dark:from-[#2D1B4E] dark:to-[#1A1A3E] pointer-events-none animate-blob transform-gpu rounded-full blur-3xl" />
+      <div className="absolute bottom-[-20%] right-[-10%] w-[60vw] h-[60vw] bg-gradient-to-tl from-blue-200/40 via-cyan-200/30 to-teal-200/40 dark:from-[#1A2A4E] dark:to-[#0F1A2E] pointer-events-none animate-blob [animation-delay:3s] transform-gpu rounded-full blur-3xl" />
+      <div className="absolute top-[40%] left-[30%] w-[40vw] h-[40vw] bg-gradient-to-r from-pink-200/30 to-rose-200/30 dark:from-[#3D1B4E] dark:to-[#2E1A3E] pointer-events-none animate-pulse-slow transform-gpu rounded-full blur-3xl" />
+      
+      {/* Floating particles for light mode */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-violet-400/30 rounded-full animate-float" />
+        <div className="absolute top-1/3 right-1/4 w-3 h-3 bg-blue-400/30 rounded-full animate-float-delayed" />
+        <div className="absolute bottom-1/3 left-1/3 w-2 h-2 bg-indigo-400/30 rounded-full animate-float-slow" />
+        <div className="absolute top-2/3 right-1/3 w-4 h-4 bg-purple-400/20 rounded-full animate-pulse" />
+      </div>
 
-      {/* Grid Pattern overlays */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
+      {/* Grid Pattern overlays - enhanced for light mode */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#00000006_1px,transparent_1px),linear-gradient(to_bottom,#00000006_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
 
-      {/* Glassmorphic Portal Box */}
+      {/* Glassmorphic Portal Box - Enhanced Light Mode */}
       <motion.div
-        initial={{ opacity: 0, y: 25 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, y: 25, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ type: "spring", stiffness: 100, damping: 20 }}
         className="w-full max-w-md relative z-10"
       >
-        <Card className="backdrop-blur-2xl bg-slate-950/40 border-slate-800/40 p-8 shadow-2xl space-y-6">
-
-	{/* Back to Home */}
+        <Card className="backdrop-blur-xl bg-white/90 dark:bg-slate-950/40 border border-white/50 dark:border-slate-800/40 shadow-[0_8px_32px_rgba(0,0,0,0.08)] dark:shadow-2xl p-8 space-y-6 transition-all duration-300 hover:shadow-[0_12px_48px_rgba(139,92,246,0.15)] dark:hover:shadow-2xl">
+          
+          {/* Back to Home */}
           <div className="flex justify-start -mb-2">
             <a
               href="/"
@@ -49,95 +64,127 @@ export const Login = () => {
             >
               <span className="inline-block transition-transform duration-200 group-hover:-translate-x-1">←</span>
               Back to Home
-            </a>
+            </Link>
           </div>       
-          {/* Logo Brand Header */}
-          <div className="text-center space-y-3">
-            <div className="inline-flex w-12 h-12 rounded-2xl bg-gradient-to-tr from-violet-600 via-indigo-600 to-blue-600 items-center justify-center shadow-lg shadow-indigo-500/20 mx-auto">
-              <TrendingUp className="w-6 h-6 text-white" />
+          
+          {/* GitHub Logo with glow effect */}
+          <div className="text-center relative">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-24 h-24 bg-gradient-to-tr from-violet-600/20 to-indigo-600/20 rounded-full blur-2xl animate-pulse" />
             </div>
-            
-            <div className="space-y-1">
-              <h1 className="text-2xl font-black tracking-tight text-white my-0 leading-none">
-                Sign in to RankerHub
-              </h1>
-              <p className="text-xs text-slate-400 font-semibold">
-                Analyze your commits, streaks, and ratings.
-              </p>
+            <div className="relative inline-flex w-20 h-20 rounded-full bg-gradient-to-br from-gray-900 to-gray-700 dark:from-gray-700 dark:to-gray-900 items-center justify-center shadow-xl shadow-gray-500/30 dark:shadow-indigo-500/20 mx-auto ring-4 ring-white/50 dark:ring-white/10">
+              <Github className="w-10 h-10 text-white" />
+            </div>
+          </div>
+          
+          {/* Heading with gradient text */}
+          <div className="text-center space-y-2">
+            <h1 className="text-3xl font-black tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent my-0 leading-tight">
+              Welcome Back
+            </h1>
+            <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">
+              Sign in to continue your coding journey
+            </p>
+          </div>
+
+          {/* Feature badges */}
+          <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-violet-50 to-indigo-50 dark:from-violet-500/10 dark:to-indigo-500/10 border border-violet-200 dark:border-violet-500/20">
+              <Sparkles className="w-3 h-3 text-violet-600 dark:text-violet-400" />
+              <span className="text-[10px] font-bold text-violet-700 dark:text-violet-400">GitRank</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-500/10 dark:to-cyan-500/10 border border-blue-200 dark:border-blue-500/20">
+              <Sparkles className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+              <span className="text-[10px] font-bold text-blue-700 dark:text-blue-400">CodingVerse</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-500/10 dark:to-amber-500/10 border border-orange-200 dark:border-orange-500/20">
+              <Sparkles className="w-3 h-3 text-orange-600 dark:text-orange-400" />
+              <span className="text-[10px] font-bold text-orange-700 dark:text-orange-400">CodingOwl</span>
             </div>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSignIn} className="space-y-4 pt-2">
-            {/* Email Field Visual */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                Email Address
-              </label>
+          <form onSubmit={handleGithubSignIn} className="space-y-5 pt-2">
+            
+            {/* Error Message - Enhanced */}
+            {error && (
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-start gap-3 p-3 rounded-xl bg-gradient-to-r from-red-50 to-rose-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20"
+              >
+                <AlertCircle className="w-4 h-4 text-red-500 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-red-700 dark:text-red-400 font-medium flex-1">{error}</p>
+                <button 
+                  onClick={() => setError("")}
+                  className="text-red-500 hover:text-red-700 dark:text-red-400 text-xs font-bold"
+                >
+                  Dismiss
+                </button>
+              </motion.div>
+            )}
+
+            {/* GitHub Sign-In Button - Enhanced */}
+            <div className="space-y-3">
               <div className="relative">
-                <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="email"
-                  value={email}
-                  disabled
-                  className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-slate-800 bg-slate-900/30 text-slate-300 cursor-not-allowed focus:outline-none placeholder:text-slate-500"
-                />
+                <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-xl blur opacity-20 group-hover:opacity-30 transition-opacity" />
+                <GradientButton
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full py-3.5 text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-violet-500/20 hover:shadow-xl hover:shadow-violet-500/30 transition-all duration-300"
+                >
+                  {isLoading ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Connecting to GitHub...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Github className="w-4 h-4" />
+                      <span>Continue with GitHub</span>
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </>
+                  )}
+                </GradientButton>
               </div>
-            </div>
-
-            {/* Password Field Visual */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                  Password
-                </label>
-                <span className="text-[10px] font-bold text-violet-400 hover:underline cursor-not-allowed">
-                  Forgot Password?
-                </span>
-              </div>
+              
+              {/* Divider with text */}
               <div className="relative">
-                <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={password}
-                  disabled
-                  className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-slate-800 bg-slate-900/30 text-slate-300 cursor-not-allowed focus:outline-none placeholder:text-slate-500"
-                />
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-slate-200 dark:border-slate-800"></div>
+                </div>
+                <div className="relative flex justify-center text-xs">
+                  <span className="px-3 bg-white/80 dark:bg-slate-950/40 text-slate-500 dark:text-slate-400 font-semibold">
+                    Secure Authentication
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* Security Indicator */}
-            <div className="flex items-center gap-2 text-[10px] text-slate-500 font-bold justify-center py-1">
-              <ShieldCheck className="w-4 h-4 text-emerald-500" />
-              Verified Secure Connection
+            {/* Security Indicator - Enhanced */}
+            <div className="flex items-center justify-between text-[10px] text-slate-500 font-bold pt-2">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-500" />
+                <span>OAuth 2.0 Secured</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                <span>Encrypted Connection</span>
+              </div>
             </div>
-
-            {/* Fake login button */}
-            <GradientButton
-              type="submit"
-              disabled={isLoading}
-              className="w-full py-3 mt-2 text-sm font-bold flex items-center justify-center gap-2"
-            >
-              {isLoading ? (
-                <>
-                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Authenticating...</span>
-                </>
-              ) : (
-                <>
-                  <span>Sign In</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </GradientButton>
           </form>
 
-          {/* Prompt footer */}
-          <div className="text-center pt-2 text-xs text-slate-400 font-semibold border-t border-slate-800">
-            Don't have an account?{" "}
-            <span className="text-violet-400 font-bold hover:underline cursor-not-allowed">
-              Sign Up
-            </span>
+          {/* Prompt footer - Enhanced */}
+          <div className="text-center pt-4 space-y-2 border-t border-slate-200/50 dark:border-slate-800/50">
+            <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+              By continuing, you agree to RankerHub's 
+              <span className="text-violet-600 dark:text-violet-400 font-bold hover:underline cursor-pointer mx-1">Terms</span>
+              and
+              <span className="text-violet-600 dark:text-violet-400 font-bold hover:underline cursor-pointer ml-1">Privacy Policy</span>
+            </p>
+            <p className="text-[10px] text-slate-500 dark:text-slate-500">
+              🔒 Your GitHub data is never stored. Only your public profile is used.
+            </p>
           </div>
 
         </Card>
