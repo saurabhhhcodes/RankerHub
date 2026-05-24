@@ -67,12 +67,12 @@ export const PublicNavbar = () => {
         </div>
 
         {/* Right side actions */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <a
             href="https://github.com/indresh404/RankerHub.git"
             target="_blank"
             rel="noopener noreferrer"
-            className="p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition cursor-pointer"
+            className="hidden sm:inline-flex p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition cursor-pointer"
             title="GitHub Repository"
           >
             <Github className="w-5 h-5" />
@@ -82,7 +82,7 @@ export const PublicNavbar = () => {
 
           <Link
             to="/login"
-            className="text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900/60"
+            className="hidden sm:inline-flex text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900/60"
           >
             Sign In
           </Link>

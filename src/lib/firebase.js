@@ -24,24 +24,17 @@ const requiredConfigKeys = [
   'appId'
 ];
 
-requiredConfigKeys.forEach(key => {
-  if (!firebaseConfig[key]) {
-    console.error(`Firebase config error: ${key} is missing. Check your .env file`);
-  }
-});
+const hasRequiredConfig = requiredConfigKeys.every((key) => Boolean(firebaseConfig[key]));
 
-// Initialize Firebase
-let app;
-try {
-  app = initializeApp(firebaseConfig);
-  console.log('Firebase initialized successfully');
-} catch (error) {
-  console.error('Firebase initialization error:', error);
-  throw error;
+if (!hasRequiredConfig) {
+  console.warn("Firebase is not configured. Auth, database, analytics, and storage services are disabled for this environment.");
 }
 
+// Initialize Firebase
+const app = hasRequiredConfig ? initializeApp(firebaseConfig) : null;
+
 // Initialize Firebase services
-export const auth = getAuth(app);
+export const auth = app ? getAuth(app) : null;
 export const githubProvider = new GithubAuthProvider();
 
 // Configure GitHub Provider with additional scopes if needed
@@ -58,27 +51,31 @@ githubProvider.setCustomParameters({
   // 'allow_signup': 'true'
 });
 
-export const db = getFirestore(app);
+export const db = app ? getFirestore(app) : null;
 
 // Initialize analytics only in the browser, and don't let analytics
 // availability crash auth or the rest of Firebase setup.
 let analyticsInstance = null;
 
-if (typeof window !== "undefined") {
+if (app && typeof window !== "undefined") {
   try {
     analyticsInstance = getAnalytics(app);
   } catch (error) {
-    console.error("Analytics initialization error:", error);
+    console.warn("Analytics initialization skipped:", error);
   }
 }
 
 export const analytics = analyticsInstance;
 
 // Initialize storage (useful for profile pictures, etc.)
-export const storage = getStorage(app);
+export const storage = app ? getStorage(app) : null;
 
 // Helper function to sign in with GitHub
 export const signInWithGitHub = async () => {
+  if (!auth) {
+    throw new Error("Firebase is not configured. Add the required VITE_FIREBASE_* values before signing in.");
+  }
+
   try {
     const result = await signInWithPopup(auth, githubProvider);
     // The signed-in user info
@@ -119,6 +116,10 @@ export const signInWithGitHub = async () => {
 
 // Helper function to sign out
 export const signOutUser = async () => {
+  if (!auth) {
+    return true;
+  }
+
   try {
     await signOut(auth);
     return true;
@@ -130,6 +131,10 @@ export const signOutUser = async () => {
 
 // Helper function to get current user's token
 export const getCurrentUserToken = async () => {
+  if (!auth) {
+    return null;
+  }
+
   const user = auth.currentUser;
   if (user) {
     try {
@@ -145,6 +150,10 @@ export const getCurrentUserToken = async () => {
 
 // Helper function to refresh user token
 export const refreshUserToken = async () => {
+  if (!auth) {
+    return null;
+  }
+
   const user = auth.currentUser;
   if (user) {
     try {
