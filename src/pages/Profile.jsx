@@ -81,6 +81,20 @@ export const Profile = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const getDiscordProfileUrl = (discordValue) => {
+    if (!discordValue) return null;
+
+    const value = discordValue.trim();
+    if (!value) return null;
+
+    if (/^https?:\/\//i.test(value)) {
+      return value;
+    }
+
+    const userId = value.replace(/^@/, "");
+    return `https://discord.com/users/${encodeURIComponent(userId)}`;
+  };
+
   // Handle social link update
   const handleUpdateSocialLink = async (type, value) => {
     if (!user) return;
@@ -107,7 +121,7 @@ export const Profile = () => {
         updateData.instagramHandle = processedValue;
       } else if (type === "discord") {
         if (value && value.trim()) {
-          processedValue = value.trim();
+          processedValue = value.trim().replace(/^@/, '');
         }
         updateData.discordUsername = processedValue;
       }
@@ -228,11 +242,11 @@ export const Profile = () => {
       name: "Discord",
       icon: DiscordIcon,
       hasLink: !!localSocialLinks.discordUsername,
-      link: null,
+      link: getDiscordProfileUrl(localSocialLinks.discordUsername),
       value: localSocialLinks.discordUsername,
       color: "hover:bg-indigo-500/10 hover:text-indigo-600",
       textColor: "text-slate-500",
-      placeholder: "Discord username#0000",
+      placeholder: "Discord user ID or profile URL",
       type: "username"
     }
   ];
