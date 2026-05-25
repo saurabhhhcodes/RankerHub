@@ -153,6 +153,13 @@ export const Profile = () => {
   const streakPoints = userData?.points?.streakPoints || 0;
   const codingVersePoints = userData?.points?.codingVersePoints || 0;
   const streak = userData?.streak || 1;
+  const pointsEngines = [
+    { label: "GitRank Points", value: gitRankPoints, color: "bg-blue-500" },
+    { label: "CodingVerse Points", value: codingVersePoints, color: "bg-purple-500" },
+    { label: "Streak Points", value: streakPoints, color: "bg-orange-500" },
+    { label: "Referral Points", value: referralPoints, color: "bg-emerald-500" }
+  ];
+  const earnedPointsTotal = pointsEngines.reduce((sum, engine) => sum + Math.max(engine.value, 0), 0);
 
   // Discord icon component
   const DiscordIcon = ({ className }) => (
@@ -501,11 +508,8 @@ export const Profile = () => {
 
           <div className="my-6 space-y-3.5">
             {[
-              { label: "GitRank Points", value: gitRankPoints, max: totalPoints || 1, color: "bg-blue-500" },
-              { label: "CodingVerse Points", value: codingVersePoints, max: totalPoints || 1, color: "bg-purple-500" },
-              { label: "Streak Points", value: streakPoints, max: totalPoints || 1, color: "bg-orange-500" },
-              { label: "Referral Points", value: referralPoints, max: totalPoints || 1, color: "bg-emerald-500" },
-              { label: "Total Points", value: totalPoints, max: totalPoints || 1, color: "bg-gradient-to-r from-violet-500 to-indigo-500", isTotal: true }
+              ...pointsEngines.map((engine) => ({ ...engine, max: totalPoints || 1 })),
+              { label: "Total Points", value: totalPoints, max: totalPoints || 1, isTotal: true }
             ].map((engine, idx) => {
               const pct = Math.floor((engine.value / engine.max) * 100) || 0;
               return (
@@ -519,10 +523,30 @@ export const Profile = () => {
                     </span>
                   </div>
                   <div className="w-full h-2 bg-slate-100 dark:bg-slate-800/80 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full ${engine.color} rounded-full transition-all duration-300`} 
-                      style={{ width: `${pct}%` }}
-                    />
+                    {engine.isTotal ? (
+                      <div className="flex h-full w-full">
+                        {pointsEngines.map((segment) => {
+                          const segmentPct = earnedPointsTotal
+                            ? (Math.max(segment.value, 0) / earnedPointsTotal) * 100
+                            : 0;
+
+                          return (
+                            <div
+                              key={segment.label}
+                              className={`h-full ${segment.color} transition-all duration-300`}
+                              style={{ width: `${segmentPct}%` }}
+                              title={`${segment.label}: ${Math.round(segmentPct)}%`}
+                              aria-label={`${segment.label}: ${Math.round(segmentPct)}% of total points`}
+                            />
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div
+                        className={`h-full ${engine.color} rounded-full transition-all duration-300`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    )}
                   </div>
                 </div>
               );
