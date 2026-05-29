@@ -18,6 +18,7 @@ jobs:
         if: github.event_name == 'issues'
         uses: actions/github-script@v9
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const issueNumber = context.payload.issue.number;
             const creator = context.payload.issue.user.login;
@@ -47,6 +48,7 @@ jobs:
         if: github.event_name == 'pull_request_target'
         uses: actions/github-script@v9
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const prNumber = context.payload.pull_request.number;
             const creator = context.payload.pull_request.user.login;
