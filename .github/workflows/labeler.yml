@@ -1,15 +1,16 @@
-name: Auto Label PR
+name: Label Issues and PRs
 
 on:
+  issues:
+    types: [opened]
+
   pull_request_target:
-    types:
-      - opened
-      - synchronize
+    types: [opened]
 
 permissions:
-  contents: read
   issues: write
   pull-requests: write
+  contents: read
 
 jobs:
   label:
@@ -21,9 +22,13 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            const isPR = !!context.payload.pull_request;
+
             await github.rest.issues.addLabels({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              labels: ['pending-review']
-            })
+              labels: isPR
+                ? ['pending-review']
+                : ['needs-triage']
+            });
