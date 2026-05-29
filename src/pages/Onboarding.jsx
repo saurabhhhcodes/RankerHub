@@ -129,6 +129,23 @@ export const Onboarding = () => {
       setIsLoading(false);
       return;
     }
+
+    // Validate that DOB is in the past and user is at least 13 years old (COPPA compliance)
+    const today = new Date().toISOString().split("T")[0];
+    if (dob > today) {
+      setError("Date of birth cannot be in the future.");
+      setIsLoading(false);
+      return;
+    }
+
+    const birthDate = new Date(dob);
+    const ageLimitDate = new Date();
+    ageLimitDate.setFullYear(ageLimitDate.getFullYear() - 13);
+    if (birthDate > ageLimitDate) {
+      setError("You must be at least 13 years old to join RankerHub.");
+      setIsLoading(false);
+      return;
+    }
     if (!selectedCollege || !collegesList.includes(selectedCollege)) {
       setError("Please select a college from the searchable dropdown list.");
       setIsLoading(false);
@@ -415,6 +432,7 @@ export const Onboarding = () => {
                 <input
                   type="date"
                   value={dob}
+                  max={new Date().toISOString().split("T")[0]}
                   onChange={(e) => setDob(e.target.value)}
                   className="w-full px-4 py-3 text-sm rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-950/20 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 dark:text-white transition-all"
                 />
