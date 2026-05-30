@@ -22,6 +22,12 @@ export const AuthProvider = ({ children }) => {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isOnboarding, setIsOnboarding] = useState(false);
+  // GitHub OAuth access token kept in React state only -- never written to
+  // sessionStorage or localStorage. Storing it in Web Storage exposes it to
+  // any JavaScript running on the page (XSS). Keeping it in memory means it
+  // is lost on page refresh, but the token is only needed once after login
+  // to call fetchGitHubStats, so this trade-off is acceptable.
+  const [ghAccessToken, setGhAccessToken] = useState(null);
 
   // Listen to Auth State Changed
   useEffect(() => {
@@ -84,8 +90,8 @@ export const AuthProvider = ({ children }) => {
       const githubId = additionalInfo?.profile?.id || null;
       const avatar = additionalInfo?.profile?.avatar_url || authUser.photoURL || "";
 
-      // Store GitHub accessToken in sessionStorage
-      sessionStorage.setItem(`gh_token_${authUser.uid}`, accessToken);
+      // Keep the token in React state only -- do not write to Web Storage.
+      setGhAccessToken(accessToken);
 
       const userDocRef = doc(db, "users", authUser.uid);
       const docSnap = await getDoc(userDocRef);
@@ -132,13 +138,11 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     setLoading(true);
     try {
-      if (user) {
-        sessionStorage.removeItem(`gh_token_${user.uid}`);
-      }
       await signOutUser();
       setUser(null);
       setUserData(null);
       setIsOnboarding(false);
+      setGhAccessToken(null);
     } catch (error) {
       console.error("Logout failure:", error);
     } finally {
@@ -146,9 +150,13 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Securely fetches GitHub stats on the client once using the transient OAuth token
+  // Fetches GitHub stats once after login using the in-memory OAuth token.
+  // The token is no longer read from sessionStorage -- it comes from the
+  // ghAccessToken state variable which is populated on login and cleared on
+  // logout. This prevents any JavaScript on the page from reading the token
+  // via sessionStorage.getItem().
   const fetchGitHubStats = async (uid, username) => {
-    const token = sessionStorage.getItem(`gh_token_${uid}`);
+    const token = ghAccessToken;
     const headers = token ? { Authorization: `token ${token}` } : {};
 
     try {

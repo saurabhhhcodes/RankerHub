@@ -97,6 +97,8 @@ const developers = [
   }
 ];
 
+let activeFollowingIds = ["sarah_c", "marcusv", "aiko_t", "sofia_r"];
+
 export const initialConnectionState = {
   followingIds: ["sarah_c", "marcusv", "aiko_t", "sofia_r"],
   followerIds: ["sarah_c", "elena_r", "tariq_m", "leo_d", "priya_shah"]
@@ -104,16 +106,19 @@ export const initialConnectionState = {
 
 export const getSocialGraph = () => ({
   developers,
-  followingIds: initialConnectionState.followingIds,
+  followingIds: activeFollowingIds,
   followerIds: initialConnectionState.followerIds
 });
 
 export const toggleFollowStatus = (followingIds, developerId) => {
+  let updatedIds;
   if (followingIds.includes(developerId)) {
-    return followingIds.filter((id) => id !== developerId);
+    updatedIds = followingIds.filter((id) => id !== developerId);
+  } else {
+    updatedIds = [...followingIds, developerId];
   }
-
-  return [...followingIds, developerId];
+  activeFollowingIds = updatedIds;
+  return updatedIds;
 };
 
 export const hydrateConnections = ({ followingIds, followerIds }) => {
