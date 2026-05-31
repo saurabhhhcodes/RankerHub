@@ -1,11 +1,52 @@
-import React from "react";
-import { Sparkles, Quote, Star } from "lucide-react";
-import { womenLeaderboardData } from "../data/leaderboard";
+import React, { useEffect, useState } from "react";
+import { Sparkles, Quote, Star, Loader2, Users } from "lucide-react";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { db } from "../lib/firebase";
+import { useAuth } from "../context/AuthContext";
 import Card from "../components/ui/Card";
 import SectionHeader from "../components/ui/SectionHeader";
 import ComingSoonCard from "../components/ui/ComingSoonCard";
 
 export const RankHer = () => {
+  const { user } = useAuth();
+  const [womenUsers, setWomenUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    // Query onboarded users who identify as female, sorted client-side by totalPoints.
+    // Firestore read rules require authentication, so this listener is only set up
+    // once a session is active.
+    const q = query(
+      collection(db, "users"),
+      where("onboardingStatus", "==", "complete"),
+      where("gender", "==", "female")
+    );
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const users = snapshot.docs.map((doc) => doc.data());
+        users.sort(
+          (a, b) => (b.points?.totalPoints || 0) - (a.points?.totalPoints || 0)
+        );
+        const ranked = users.map((u, i) => ({ ...u, rank: i + 1 }));
+        setWomenUsers(ranked);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("RankHer leaderboard subscription error:", error);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [user]);
+
   return (
     <div className="space-y-8">
       {/* Page Header */}
@@ -18,142 +59,197 @@ export const RankHer = () => {
 
       <ComingSoonCard
         title="Women In Tech Leaderboard - Coming Soon"
-        description="Our community advocacy framework is in development. Registered female coders will be spotlighted, matched with top technical mentors, and automatically verified for active industry awards. Currently showcasing simulated advocate stats."
+        description="Our community advocacy framework is in development. Registered female coders will be spotlighted, matched with top technical mentors, and automatically verified for active industry awards."
         icon={Sparkles}
         features={[
           "Verified credentials badges & awards",
           "Mentorship matchmaking matching engine",
           "Highlight spotlights and developer journals",
-          "Exclusive coding challenges and workshops"
+          "Exclusive coding challenges and workshops",
         ]}
         estimatedArrival="Q4 2026"
         showHourglass={true}
       />
 
-      {/* Feature / Spotlights: Top Women in Tech Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {womenLeaderboardData.slice(0, 2).map((user, _idx) => (
-          <Card
-            key={user.rank}
-            className="p-6 relative overflow-hidden flex flex-col md:flex-row items-center gap-6 border-pink-500/15"
-          >
-            {/* Pink glow in card */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-pink-500/5 rounded-full blur-2xl pointer-events-none" />
+      {/* Spotlight cards: top 2 real women engineers */}
+      {loading ? (
+        <div className="flex items-center justify-center py-12 text-slate-400">
+          <Loader2 className="w-6 h-6 animate-spin mr-2" />
+          <span className="text-sm font-medium">Loading rankings...</span>
+        </div>
+      ) : !user ? (
+        <Card className="p-8 text-center">
+          <Users className="w-10 h-10 text-pink-400 mx-auto mb-3" />
+          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+            Sign in to see the live RankHer standings.
+          </p>
+        </Card>
+      ) : womenUsers.length === 0 ? (
+        <Card className="p-8 text-center">
+          <Sparkles className="w-10 h-10 text-pink-400 mx-auto mb-3" />
+          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+            No rankings yet. Be the first to complete onboarding and appear here!
+          </p>
+        </Card>
+      ) : (
+        <>
+          {/* Spotlight cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {womenUsers.slice(0, 2).map((user) => (
+              <Card
+                key={user.uid || user.rank}
+                className="p-6 relative overflow-hidden flex flex-col md:flex-row items-center gap-6 border-pink-500/15"
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-pink-500/5 rounded-full blur-2xl pointer-events-none" />
 
-            {/* Profile Avatar */}
-            <div className="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 ring-4 ring-pink-500/10 relative">
-              <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
-              <div className="absolute bottom-1 right-1 bg-pink-500 text-white p-1 rounded-lg">
-                <Star className="w-3.5 h-3.5 fill-white" />
-              </div>
-            </div>
+                <div className="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 ring-4 ring-pink-500/10 relative">
+                  {user.photoURL ? (
+                    <img
+                      src={user.photoURL}
+                      alt={user.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-pink-500/10 flex items-center justify-center text-2xl font-black text-pink-500">
+                      {(user.name || "?")[0].toUpperCase()}
+                    </div>
+                  )}
+                  <div className="absolute bottom-1 right-1 bg-pink-500 text-white p-1 rounded-lg">
+                    <Star className="w-3.5 h-3.5 fill-white" />
+                  </div>
+                </div>
 
-            {/* Advocate description & Quote */}
-            <div className="flex-1 space-y-3 text-center md:text-left">
-              <div>
-                <span className="text-[10px] font-bold text-pink-600 dark:text-pink-400 uppercase tracking-widest bg-pink-500/10 dark:bg-pink-500/20 px-2 py-0.5 rounded-full border border-pink-500/20">
-                  {user.featuredBadge}
+                <div className="flex-1 space-y-3 text-center md:text-left">
+                  <div>
+                    <span className="text-[10px] font-bold text-pink-600 dark:text-pink-400 uppercase tracking-widest bg-pink-500/10 dark:bg-pink-500/20 px-2 py-0.5 rounded-full border border-pink-500/20">
+                      Rank #{user.rank}
+                    </span>
+                    <h3 className="text-lg font-extrabold text-slate-900 dark:text-white mt-2 mb-0">
+                      {user.name}
+                    </h3>
+                    <span className="text-xs font-bold text-slate-400">
+                      {user.githubUsername
+                        ? `@${user.githubUsername}`
+                        : user.college || ""}
+                      {user.college && user.githubUsername
+                        ? ` • ${user.college}`
+                        : ""}
+                    </span>
+                  </div>
+
+                  <div className="bg-slate-50 dark:bg-slate-950/40 p-3 rounded-xl border border-slate-200/25 dark:border-slate-800/25 relative">
+                    <Quote className="w-4 h-4 text-pink-300 dark:text-pink-500/40 absolute top-2 left-2" />
+                    <p className="text-xs italic text-slate-500 dark:text-slate-400 pl-5 pr-2 pt-1 font-medium leading-relaxed">
+                      {user.points?.totalPoints?.toLocaleString() ?? 0} XP
+                      earned
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-center md:justify-start gap-4 text-xs font-bold text-slate-500 pt-1">
+                    <span>
+                      GitRank:{" "}
+                      <span className="text-slate-800 dark:text-white">
+                        {user.points?.gitRankPoints ?? 0}
+                      </span>
+                    </span>
+                    <span>
+                      Streak:{" "}
+                      <span className="text-orange-500">
+                        {user.points?.streakPoints ?? 0} pts
+                      </span>
+                    </span>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+
+          {/* Empowerment banner */}
+          <Card className="relative overflow-hidden p-8 text-white bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 border-none shadow-[0_10px_35px_rgba(236,72,153,0.3)]">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none -z-10" />
+            <div className="max-w-2xl space-y-4">
+              <h2 className="text-2xl md:text-3xl font-black tracking-tight leading-tight my-0">
+                Fostering Representation in Tech.
+              </h2>
+              <p className="text-sm md:text-base text-pink-50 leading-relaxed font-medium">
+                Advancing diversity within technology builds more creative,
+                inclusive solutions. The RankHer initiative highlights women
+                software engineers, ensuring high visibility for contributions,
+                publications, and system leadership.
+              </p>
+              <div className="pt-2 flex items-center gap-3">
+                <span className="px-3 py-1 rounded-xl text-xs bg-white/20 text-white font-bold backdrop-blur-md">
+                  Gender Equity Focus
                 </span>
-                <h3 className="text-lg font-extrabold text-slate-900 dark:text-white mt-2 mb-0">
-                  {user.name}
-                </h3>
-                <span className="text-xs font-bold text-slate-400">
-                  @{user.username} • {user.role}
+                <span className="px-3 py-1 rounded-xl text-xs bg-white/20 text-white font-bold backdrop-blur-md">
+                  Career Advancement
                 </span>
-              </div>
-
-              {/* Quote */}
-              <div className="bg-slate-50 dark:bg-slate-950/40 p-3 rounded-xl border border-slate-200/25 dark:border-slate-800/25 relative">
-                <Quote className="w-4 h-4 text-pink-300 dark:text-pink-500/40 absolute top-2 left-2" />
-                <p className="text-xs italic text-slate-500 dark:text-slate-400 pl-5 pr-2 pt-1 font-medium leading-relaxed">
-                  "{user.empowermentQuote}"
-                </p>
-              </div>
-
-              <div className="flex items-center justify-center md:justify-start gap-4 text-xs font-bold text-slate-500 pt-1">
-                <span>Streak: <span className="text-orange-500">🔥 {user.streak}d</span></span>
-                <span>Contributions: <span className="text-slate-800 dark:text-white">{user.contributions}</span></span>
               </div>
             </div>
           </Card>
-        ))}
-      </div>
 
-      {/* Empowerment Gradient Banners Section */}
-      <Card className="relative overflow-hidden p-8 text-white bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 border-none shadow-[0_10px_35px_rgba(236,72,153,0.3)]">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none -z-10" />
-        
-        <div className="max-w-2xl space-y-4">
-          <h2 className="text-2xl md:text-3xl font-black tracking-tight leading-tight my-0">
-            Fostering Representation in Tech.
-          </h2>
-          <p className="text-sm md:text-base text-pink-50 leading-relaxed font-medium">
-            Advancing diversity within technology builds more creative, inclusive solutions. The RankHer initiative highlights women software engineers, ensuring high visibility for contributions, publications, and system leadership.
-          </p>
-          <div className="pt-2 flex items-center gap-3">
-            <span className="px-3 py-1 rounded-xl text-xs bg-white/20 text-white font-bold backdrop-blur-md">
-              Gender Equity Focus
-            </span>
-            <span className="px-3 py-1 rounded-xl text-xs bg-white/20 text-white font-bold backdrop-blur-md">
-              Career Advancement
-            </span>
-          </div>
-        </div>
-      </Card>
-
-      {/* Mock leaderboard display */}
-      <Card className="p-6">
-        <div className="pb-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-          <h3 className="font-extrabold text-lg text-slate-900 dark:text-white my-0">
-            Top Advocate Standings
-          </h3>
-          <span className="text-xs font-bold text-slate-400 uppercase">Simulated Standings</span>
-        </div>
-
-        <div className="divide-y divide-slate-100 dark:divide-slate-800/40 text-sm mt-4">
-          {womenLeaderboardData.map((user) => (
-            <div
-              key={user.rank}
-              className="py-4 flex items-center justify-between gap-4 hover:bg-slate-50/50 dark:hover:bg-slate-900/10 transition-colors rounded-xl px-2"
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-bold text-slate-400 w-6">
-                  #{user.rank}
-                </span>
-
-                <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
-                  <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
-                </div>
-
-                <div>
-                  <span className="font-extrabold text-slate-900 dark:text-white block leading-tight">
-                    {user.name}
-                  </span>
-                  <span className="text-[10px] text-slate-400 font-semibold block">
-                    @{user.username} • {user.role}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-6">
-                <div className="hidden sm:block text-right">
-                  <span className="text-[10px] font-bold text-pink-500 dark:text-pink-400 bg-pink-500/10 dark:bg-pink-500/20 px-2 py-0.5 rounded-full border border-pink-500/20 uppercase tracking-wider">
-                    {user.featuredBadge}
-                  </span>
-                </div>
-
-                <div className="text-right min-w-[70px]">
-                  <span className="block font-black text-slate-900 dark:text-white leading-none">
-                    {user.points.toLocaleString()}
-                  </span>
-                  <span className="text-[10px] font-semibold text-slate-400">XP Points</span>
-                </div>
-              </div>
+          {/* Live leaderboard table */}
+          <Card className="p-6">
+            <div className="pb-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <h3 className="font-extrabold text-lg text-slate-900 dark:text-white my-0">
+                Top Advocate Standings
+              </h3>
+              <span className="text-xs font-bold text-emerald-500 uppercase">
+                Live
+              </span>
             </div>
-          ))}
-        </div>
-      </Card>
 
+            <div className="divide-y divide-slate-100 dark:divide-slate-800/40 text-sm mt-4">
+              {womenUsers.map((user) => (
+                <div
+                  key={user.uid || user.rank}
+                  className="py-4 flex items-center justify-between gap-4 hover:bg-slate-50/50 dark:hover:bg-slate-900/10 transition-colors rounded-xl px-2"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-bold text-slate-400 w-6">
+                      #{user.rank}
+                    </span>
+
+                    <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-pink-500/10 flex items-center justify-center">
+                      {user.photoURL ? (
+                        <img
+                          src={user.photoURL}
+                          alt={user.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-sm font-black text-pink-500">
+                          {(user.name || "?")[0].toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+
+                    <div>
+                      <span className="font-extrabold text-slate-900 dark:text-white block leading-tight">
+                        {user.name}
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-semibold block">
+                        {user.githubUsername
+                          ? `@${user.githubUsername}`
+                          : user.college || ""}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="text-right min-w-[70px]">
+                    <span className="block font-black text-slate-900 dark:text-white leading-none">
+                      {(user.points?.totalPoints || 0).toLocaleString()}
+                    </span>
+                    <span className="text-[10px] font-semibold text-slate-400">
+                      XP Points
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </>
+      )}
     </div>
   );
 };
