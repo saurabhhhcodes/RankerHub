@@ -34,6 +34,7 @@ export const GitRank = () => {
   const [events, setEvents] = useState([]);
   const [repos, setRepos] = useState([]);
   const [loadingCharts, setLoadingCharts] = useState(true);
+  const [chartRateLimitError, setChartRateLimitError] = useState("");
 
   const languages = ["All", "TypeScript", "Rust", "Go", "Python", "Kotlin", "Ruby", "JavaScript"];
 
@@ -135,8 +136,14 @@ export const GitRank = () => {
 
     const fetchAnalytics = async () => {
       setLoadingCharts(true);
+      setChartRateLimitError("");
       const token = sessionStorage.getItem(`gh_token_${user?.uid}`);
       const headers = token ? { Authorization: `token ${token}` } : {};
+
+      const isRateLimited = (err) => {
+        const status = err?.response?.status;
+        return status === 403 || status === 429;
+      };
 
       try {
         const eventsRes = await axios.get(
@@ -145,6 +152,13 @@ export const GitRank = () => {
         );
         setEvents(eventsRes.data || []);
       } catch (err) {
+        if (isRateLimited(err)) {
+          setChartRateLimitError(
+            "GitHub API rate limit reached. Chart data is temporarily unavailable. Please wait a few minutes and reload the page."
+          );
+          setLoadingCharts(false);
+          return;
+        }
         console.warn("Failed to fetch events for charts:", err);
       }
 
@@ -155,6 +169,13 @@ export const GitRank = () => {
         );
         setRepos(reposRes.data || []);
       } catch (err) {
+        if (isRateLimited(err)) {
+          setChartRateLimitError(
+            "GitHub API rate limit reached. Chart data is temporarily unavailable. Please wait a few minutes and reload the page."
+          );
+          setLoadingCharts(false);
+          return;
+        }
         console.warn("Failed to fetch repos for charts:", err);
       }
       setLoadingCharts(false);
@@ -533,6 +554,14 @@ export const GitRank = () => {
               </div>
             )}
           </Card>
+
+          {/* Rate limit error for charts */}
+          {chartRateLimitError && (
+            <div className="flex items-center gap-2 text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-2 rounded-xl">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>{chartRateLimitError}</span>
+            </div>
+          )}
 
           {/* User GitHub Graphs & Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
