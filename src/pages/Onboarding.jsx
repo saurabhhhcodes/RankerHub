@@ -89,14 +89,15 @@ export const Onboarding = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Helper to generate unique 6-character uppercase code
+  // Helper to generate a unique 6-character uppercase code using
+  // crypto.getRandomValues() for better randomness than Math.random()
   const generateReferralCode = () => {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    let code = "";
-    for (let i = 0; i < 6; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return code;
+    const randomValues = new Uint8Array(6);
+    crypto.getRandomValues(randomValues);
+    return Array.from(randomValues)
+      .map((byte) => chars[byte % chars.length])
+      .join("");
   };
 
   const handleSelectCollege = (college) => {
