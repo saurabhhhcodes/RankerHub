@@ -80,7 +80,7 @@ export const Navbar = ({ toggleMobile, isMobileOpen }) => {
 
   return (
     <nav className="sticky top-0 z-30 h-16 border-b border-slate-200/50 dark:border-slate-800/50 bg-white/70 dark:bg-slate-950/70 backdrop-blur-md shadow-sm transition-all duration-300 px-4 md:px-6 flex items-center justify-between relative">
-      
+
       {/* Mobile Search Overlay */}
       <AnimatePresence>
         {isMobileSearchOpen && (
@@ -100,7 +100,7 @@ export const Navbar = ({ toggleMobile, isMobileOpen }) => {
                 autoFocus
                 className="w-full pl-10 pr-4 py-2 text-sm rounded-xl border border-slate-200/60 dark:border-slate-800/60 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 dark:text-white transition-all"
               />
-              
+
               {/* Mobile Search Results Dropdown */}
               <AnimatePresence>
                 {showSearchResults && searchResults.length > 0 && (
@@ -132,7 +132,7 @@ export const Navbar = ({ toggleMobile, isMobileOpen }) => {
                               {user.name}
                             </p>
                             <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                              @{user.username} • {user.language}
+                              @{user.username}{" • "}{user.language}
                             </p>
                           </div>
                         </button>
@@ -204,7 +204,7 @@ export const Navbar = ({ toggleMobile, isMobileOpen }) => {
           onChange={handleSearchChange}
           className="w-full pl-10 pr-4 py-2 text-sm rounded-xl border border-slate-200/60 dark:border-slate-800/60 bg-white/40 dark:bg-slate-900/40 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 dark:text-white transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
         />
-        
+
         {/* Search Results Dropdown */}
         <AnimatePresence>
           {showSearchResults && searchResults.length > 0 && (
@@ -233,7 +233,8 @@ export const Navbar = ({ toggleMobile, isMobileOpen }) => {
                         {user.name}
                       </p>
                       <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                        @{user.username} • {user.language} • #{user.rank}
+
+                        @{user.username}{" • "}{user.language}{" • "}#{user.rank}
                       </p>
                     </div>
                     <div className="text-right">
@@ -263,7 +264,7 @@ export const Navbar = ({ toggleMobile, isMobileOpen }) => {
       {/* Right side: Actions, Theme, Notifications, Profile */}
       <div className="flex items-center gap-3">
         {/* Search toggle for small screens */}
-        <button 
+        <button
           onClick={() => setIsMobileSearchOpen(true)}
           className="md:hidden p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition cursor-pointer"
         >
@@ -324,9 +325,8 @@ export const Navbar = ({ toggleMobile, isMobileOpen }) => {
                     notifications.map((n) => (
                       <div
                         key={n.id}
-                        className={`p-4 transition-colors relative group flex items-start gap-3 hover:bg-slate-50 dark:hover:bg-slate-800 ${
-                          !n.read ? "bg-violet-50/20 dark:bg-violet-500/5" : ""
-                        }`}
+                        className={`p-4 transition-colors relative group flex items-start gap-3 hover:bg-slate-50 dark:hover:bg-slate-800 ${!n.read ? "bg-violet-50/20 dark:bg-violet-500/5" : ""
+                          }`}
                       >
                         {/* Red/Green status light */}
                         {!n.read && (
