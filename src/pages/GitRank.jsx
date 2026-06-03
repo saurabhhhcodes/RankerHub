@@ -10,7 +10,7 @@ import GradientButton from "../components/ui/GradientButton";
 import axios from "axios";
 
 export const GitRank = () => {
-  const { user, userData, fetchGitHubStats, login } = useAuth();
+  const { user, userData, fetchGitHubStats, login, ghAccessToken } = useAuth();
   const [searchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
   const [selectedLanguage, setSelectedLanguage] = useState("All");
@@ -43,7 +43,7 @@ export const GitRank = () => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoadingUsers(true);
 
-    // Build the query dynamically based on language selection
+// Build the query dynamically based on language selection and strict sorting
     const constraints = [
       where("onboardingStatus", "==", "complete"),
       orderBy("points.gitRankPoints", "desc")
@@ -86,15 +86,14 @@ export const GitRank = () => {
     );
 
     return () => unsubscribe();
-  }, [selectedLanguage]); // Removed 'user' dependency to allow guest fetching
-
+}, [selectedLanguage]); // Removed 'user' dependency to allow guest fetching
   // Pagination Function (Fetch next 50)
   const loadMoreUsers = async () => {
     if (!lastVisible || !hasMore || loadingMore) return;
 
     setLoadingMore(true);
     try {
-      const constraints = [
+const constraints = [
         where("onboardingStatus", "==", "complete"),
         orderBy("points.gitRankPoints", "desc")
       ];
@@ -149,7 +148,7 @@ export const GitRank = () => {
     const fetchAnalytics = async () => {
       setLoadingCharts(true);
       setChartRateLimitError("");
-      const token = sessionStorage.getItem(`gh_token_${user?.uid}`);
+      const token = ghAccessToken;
       const headers = token ? { Authorization: `token ${token}` } : {};
 
       const isRateLimited = (err) => {
@@ -194,7 +193,7 @@ export const GitRank = () => {
     };
 
     fetchAnalytics();
-  }, [userData, user]);
+  }, [userData, user, ghAccessToken]);
 
   // 3. Sync GitHub Data Handler
   const handleSync = async () => {
