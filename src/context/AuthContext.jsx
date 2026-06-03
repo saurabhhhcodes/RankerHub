@@ -8,7 +8,8 @@ import {
   doc,
   getDoc,
   setDoc,
-  onSnapshot
+  onSnapshot,
+  runTransaction
 } from "firebase/firestore";
 import axios from "axios";
 import { auth, db, signInWithGitHub, signOutUser } from "../lib/firebase";
@@ -22,17 +23,15 @@ export const AuthProvider = ({ children }) => {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isOnboarding, setIsOnboarding] = useState(false);
-  // GitHub OAuth access token persisted in sessionStorage to survive page refreshes
+// GitHub OAuth access token persisted in sessionStorage to survive page refreshes
   const [ghAccessToken, setGhAccessToken] = useState(() => {
     return sessionStorage.getItem("gh_access_token") || null;
   });
 
-  // Listen to Auth State Changed
   useEffect(() => {
     let unsubscribeSnapshot = null;
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
-      // Clean up previous snapshot listener
       if (unsubscribeSnapshot) {
         unsubscribeSnapshot();
         unsubscribeSnapshot = null;
@@ -45,7 +44,6 @@ export const AuthProvider = ({ children }) => {
           setGhAccessToken(token);
         }
         
-        // Listen in real-time to the user document in Firestore
         const userDocRef = doc(db, "users", currentUser.uid);
         
         unsubscribeSnapshot = onSnapshot(userDocRef, (docSnap) => {
@@ -55,7 +53,6 @@ export const AuthProvider = ({ children }) => {
             setIsOnboarding(data.onboardingStatus === "incomplete");
             setLoading(false);
           } else {
-            // Skeletal document doesn't exist yet, meaning onboarding is pending
             setUserData(null);
             setIsOnboarding(true);
             setLoading(false);
@@ -79,22 +76,20 @@ export const AuthProvider = ({ children }) => {
     };
   }, []);
 
-  // Securely login with GitHub and request private repo scope by default
   const login = async (requestRepoScope = true) => {
     setLoading(true);
     try {
-      // Pass the flag to firebase service
       const { user: authUser, accessToken, result } = await signInWithGitHub(requestRepoScope);
 
-      // Extract GitHub details securely
       const additionalInfo = getAdditionalUserInfo(result);
       const githubUsername = additionalInfo?.username || authUser.displayName || "";
       const githubId = additionalInfo?.profile?.id || null;
       const avatar = additionalInfo?.profile?.avatar_url || authUser.photoURL || "";
 
-      // Save the token to sessionStorage and state to keep user authenticated across refreshes
+// Save the token to sessionStorage and state to keep user authenticated across refreshes
       sessionStorage.setItem("gh_access_token", accessToken);
       sessionStorage.setItem(`gh_token_${authUser.uid}`, accessToken);
+      setGhAccessToken(accessToken);
       setGhAccessToken(accessToken);
 
       const userDocRef = doc(db, "users", authUser.uid);
@@ -138,7 +133,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Logout utility
   const logout = async () => {
     setLoading(true);
     try {
@@ -158,29 +152,21 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Fetches GitHub stats once after login using the in-memory OAuth token.
-  // The token is no longer read from sessionStorage -- it comes from the
-  // ghAccessToken state variable which is populated on login and cleared on
-  // logout. This prevents any JavaScript on the page from reading the token
-  // via sessionStorage.getItem().
   const fetchGitHubStats = async (uid, username) => {
     const token = ghAccessToken;
     const headers = token ? { Authorization: `token ${token}` } : {};
 
     try {
-      // 1. Fetch authenticated user profile data
       const profileRes = await axios.get(`https://api.github.com/users/${username}`, { headers });
       const publicRepos = profileRes.data.public_repos || 0;
       const followers = profileRes.data.followers || 0;
       
-      // 2. Fetch repos to sum up stargazers and calculate primary language
       let stars = 0;
       let primaryLanguage = "JavaScript";
       try {
         const reposRes = await axios.get(`https://api.github.com/users/${username}/repos?per_page=100&type=owner`, { headers });
         stars = reposRes.data.reduce((sum, r) => sum + (r.stargazers_count || 0), 0);
         
-        // Count language frequency
         const langCounts = {};
         reposRes.data.forEach(r => {
           if (r.language) {
@@ -195,7 +181,6 @@ export const AuthProvider = ({ children }) => {
         console.warn("Stars/Language retrieval warning, defaulting:", err);
       }
 
-      // 3. Fetch total commits using Search API (authenticated allows up to 30 requests/min securely)
       let commits = 0;
       try {
         const commitsRes = await axios.get(`https://api.github.com/search/commits?q=author:${username}`, { headers });
@@ -205,7 +190,6 @@ export const AuthProvider = ({ children }) => {
         commits = 0;
       }
 
-      // 4. Fetch total pull requests
       let prs = 0;
       try {
         const prsRes = await axios.get(`https://api.github.com/search/issues?q=author:${username}+type:pr`, { headers });
@@ -215,7 +199,6 @@ export const AuthProvider = ({ children }) => {
         prs = 0;
       }
 
-      // 5. Fetch total reviews (PRs reviewed by user)
       let reviews = 0;
       try {
         const reviewsRes = await axios.get(`https://api.github.com/search/issues?q=reviewed-by:${username}`, { headers });
@@ -225,8 +208,6 @@ export const AuthProvider = ({ children }) => {
         reviews = 0;
       }
 
-      // Calculate initial GitRank points securely based on real work only:
-      // Commits -> +2, PRs -> +5, Reviews -> +10
       const gitRankPoints = (commits * 2) + (prs * 5) + (reviews * 10);
 
       return {
@@ -241,9 +222,6 @@ export const AuthProvider = ({ children }) => {
       };
     } catch (error) {
       console.error("Error executing GitHub stats fetcher snapshot:", error);
-      // Return honest zeros when the API is unreachable so no fabricated
-      // points are written to Firestore. The caller can surface a
-      // "score pending" state and re-fetch on the next login.
       return {
         commits: 0,
         prs: 0,
@@ -257,8 +235,57 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const syncGitHubData = async () => {
+    if (!user || !userData?.githubUsername) return;
+
+    if (userData.lastSync) {
+      const lastSyncTime = new Date(userData.lastSync).getTime();
+      const cooldownMs = 5 * 60 * 1000;
+      if (Date.now() - lastSyncTime < cooldownMs) {
+        console.log("Background GitHub sync skipped: Cooldown active.");
+        return;
+      }
+    }
+
+    try {
+      const ghStats = await fetchGitHubStats(user.uid, userData.githubUsername);
+      const userRef = doc(db, "users", user.uid);
+
+      await runTransaction(db, async (transaction) => {
+        const userDoc = await transaction.get(userRef);
+        if (!userDoc.exists()) {
+          throw new Error("User document does not exist in Firestore!");
+        }
+
+        const liveData = userDoc.data();
+        const currentReferralPoints = liveData.points?.referralPoints || 0;
+        const currentCodingVersePoints = liveData.points?.codingVersePoints || 0;
+        const currentStreakPoints = liveData.points?.streakPoints || 0;
+
+        const newGitRankPoints = ghStats.gitRankPoints;
+        const newTotalPoints = newGitRankPoints + currentReferralPoints + currentCodingVersePoints + currentStreakPoints;
+
+        transaction.update(userRef, {
+          "githubStats.commits": ghStats.commits,
+          "githubStats.prs": ghStats.prs,
+          "githubStats.reviews": ghStats.reviews,
+          "githubStats.repos": ghStats.publicRepos,
+          "githubStats.stars": ghStats.stars,
+          "githubStats.followers": ghStats.followers,
+          "githubStats.primaryLanguage": ghStats.primaryLanguage,
+          "points.gitRankPoints": newGitRankPoints,
+          "points.totalPoints": newTotalPoints,
+          "lastSync": new Date().toISOString()
+        });
+      });
+      console.log("Background GitHub sync completed successfully.");
+    } catch (error) {
+      console.error("Background GitHub sync failed:", error);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, userData, loading, isOnboarding, login, logout, fetchGitHubStats, ghAccessToken }}>
+<AuthContext.Provider value={{ user, userData, loading, isOnboarding, login, logout, fetchGitHubStats, syncGitHubData, ghAccessToken }}>
       {children}
     </AuthContext.Provider>
   );
