@@ -8,7 +8,6 @@ import logo from "../../assets/logo.png";
 const getInitialIndex = (location) => {
   const path = location.pathname;
   const hash = location.hash;
-  const search = location.search;
 
   if (hash === "#how-it-works") return 2;
   if (hash === "#features") return 1;

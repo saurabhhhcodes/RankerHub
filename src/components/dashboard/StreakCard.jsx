@@ -46,15 +46,11 @@ export const StreakCard = () => {
 
       if (dayDate.toDateString() === todayStr) {
         status = loggedInToday ? "completed" : "current";
-      } else if (dayDate > now) {
-        status = "pending";
-      } else {
+      } else if (dayDate < now) {
         // Past day
         const maxCompletedDiff = loggedInToday ? activeStreak - 1 : activeStreak;
         if (diffDays >= 0 && diffDays <= maxCompletedDiff) {
           status = "completed";
-        } else {
-          status = "pending";
         }
       }
 

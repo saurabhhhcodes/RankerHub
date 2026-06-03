@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Code2, Target, CheckCircle2, Award, Play, X, Terminal, Sparkles, Check, Settings, RefreshCw } from "lucide-react";
+import { Code2, Target, CheckCircle2, Award, Play, X, Terminal, Check, Settings, RefreshCw } from "lucide-react";
 import Card from "../components/ui/Card";
 import SectionHeader from "../components/ui/SectionHeader";
 import GradientButton from "../components/ui/GradientButton";
