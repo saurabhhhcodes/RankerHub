@@ -200,18 +200,37 @@ export const AuthProvider = ({ children }) => {
   };
 
   const fetchGitHubStats = async (uid, username) => {
+    // Validate GitHub username per GitHub's rules: 1-39 characters,
+    // alphanumeric + hyphens only, no leading/trailing hyphens.
+    if (!username || typeof username !== "string") {
+      throw new Error("GitHub username is required and must be a string.");
+    }
+
+    const trimmedUsername = username.trim();
+    if (trimmedUsername.length === 0 || trimmedUsername.length > 39) {
+      throw new Error("GitHub username must be between 1 and 39 characters.");
+    }
+
+    if (!/^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$/.test(trimmedUsername)) {
+      throw new Error("GitHub username can only contain letters, digits, and hyphens, and cannot start or end with a hyphen.");
+    }
+
+    // URL-encode the username to prevent injection attacks, though axios should
+    // handle this automatically.
+    const encodedUsername = encodeURIComponent(trimmedUsername);
+
     const token = ghAccessToken;
     const headers = token ? { Authorization: `token ${token}` } : {};
 
     try {
-      const profileRes = await axios.get(`https://api.github.com/users/${username}`, { headers });
+      const profileRes = await axios.get(`https://api.github.com/users/${encodedUsername}`, { headers });
       const publicRepos = profileRes.data.public_repos || 0;
       const followers = profileRes.data.followers || 0;
       
       let stars = 0;
       let primaryLanguage = "JavaScript";
       try {
-        const reposRes = await axios.get(`https://api.github.com/users/${username}/repos?per_page=100&type=owner`, { headers });
+        const reposRes = await axios.get(`https://api.github.com/users/${encodedUsername}/repos?per_page=100&type=owner`, { headers });
         stars = reposRes.data.reduce((sum, r) => sum + (r.stargazers_count || 0), 0);
         
         const langCounts = {};
@@ -230,7 +249,7 @@ export const AuthProvider = ({ children }) => {
 
       let commits = 0;
       try {
-        const commitsRes = await axios.get(`https://api.github.com/search/commits?q=author:${username}`, { headers });
+        const commitsRes = await axios.get(`https://api.github.com/search/commits?q=author:${encodedUsername}`, { headers });
         commits = commitsRes.data.total_count || 0;
       } catch (err) {
         console.warn("Commits retrieval failed; score will be incomplete until next refresh:", err);
@@ -239,7 +258,7 @@ export const AuthProvider = ({ children }) => {
 
       let prs = 0;
       try {
-        const prsRes = await axios.get(`https://api.github.com/search/issues?q=author:${username}+type:pr`, { headers });
+        const prsRes = await axios.get(`https://api.github.com/search/issues?q=author:${encodedUsername}+type:pr`, { headers });
         prs = prsRes.data.total_count || 0;
       } catch (err) {
         console.warn("PRs retrieval failed; score will be incomplete until next refresh:", err);
@@ -248,7 +267,7 @@ export const AuthProvider = ({ children }) => {
 
       let reviews = 0;
       try {
-        const reviewsRes = await axios.get(`https://api.github.com/search/issues?q=reviewed-by:${username}`, { headers });
+        const reviewsRes = await axios.get(`https://api.github.com/search/issues?q=reviewed-by:${encodedUsername}`, { headers });
         reviews = reviewsRes.data.total_count || 0;
       } catch (err) {
         console.warn("Reviews retrieval failed; score will be incomplete until next refresh:", err);
