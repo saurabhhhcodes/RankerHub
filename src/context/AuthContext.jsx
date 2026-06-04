@@ -154,6 +154,7 @@ export const AuthProvider = ({ children }) => {
           city: "",
           streak: 0,
           longestStreak: 0,
+          githubStreak: 0,
           lastLogin: new Date().toISOString(),
           createdAt: new Date().toISOString(),
           points: {
@@ -200,18 +201,37 @@ export const AuthProvider = ({ children }) => {
   };
 
   const fetchGitHubStats = async (uid, username) => {
+    // Validate GitHub username per GitHub's rules: 1-39 characters,
+    // alphanumeric + hyphens only, no leading/trailing hyphens.
+    if (!username || typeof username !== "string") {
+      throw new Error("GitHub username is required and must be a string.");
+    }
+
+    const trimmedUsername = username.trim();
+    if (trimmedUsername.length === 0 || trimmedUsername.length > 39) {
+      throw new Error("GitHub username must be between 1 and 39 characters.");
+    }
+
+    if (!/^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$/.test(trimmedUsername)) {
+      throw new Error("GitHub username can only contain letters, digits, and hyphens, and cannot start or end with a hyphen.");
+    }
+
+    // URL-encode the username to prevent injection attacks, though axios should
+    // handle this automatically.
+    const encodedUsername = encodeURIComponent(trimmedUsername);
+
     const token = ghAccessToken;
     const headers = token ? { Authorization: `token ${token}` } : {};
 
     try {
-      const profileRes = await axios.get(`https://api.github.com/users/${username}`, { headers });
+      const profileRes = await axios.get(`https://api.github.com/users/${encodedUsername}`, { headers });
       const publicRepos = profileRes.data.public_repos || 0;
       const followers = profileRes.data.followers || 0;
       
       let stars = 0;
       let primaryLanguage = "JavaScript";
       try {
-        const reposRes = await axios.get(`https://api.github.com/users/${username}/repos?per_page=100&type=owner`, { headers });
+        const reposRes = await axios.get(`https://api.github.com/users/${encodedUsername}/repos?per_page=100&type=owner`, { headers });
         stars = reposRes.data.reduce((sum, r) => sum + (r.stargazers_count || 0), 0);
         
         const langCounts = {};
@@ -230,7 +250,7 @@ export const AuthProvider = ({ children }) => {
 
       let commits = 0;
       try {
-        const commitsRes = await axios.get(`https://api.github.com/search/commits?q=author:${username}`, { headers });
+        const commitsRes = await axios.get(`https://api.github.com/search/commits?q=author:${encodedUsername}`, { headers });
         commits = commitsRes.data.total_count || 0;
       } catch (err) {
         console.warn("Commits retrieval failed; score will be incomplete until next refresh:", err);
@@ -239,7 +259,7 @@ export const AuthProvider = ({ children }) => {
 
       let prs = 0;
       try {
-        const prsRes = await axios.get(`https://api.github.com/search/issues?q=author:${username}+type:pr`, { headers });
+        const prsRes = await axios.get(`https://api.github.com/search/issues?q=author:${encodedUsername}+type:pr`, { headers });
         prs = prsRes.data.total_count || 0;
       } catch (err) {
         console.warn("PRs retrieval failed; score will be incomplete until next refresh:", err);
@@ -248,14 +268,62 @@ export const AuthProvider = ({ children }) => {
 
       let reviews = 0;
       try {
-        const reviewsRes = await axios.get(`https://api.github.com/search/issues?q=reviewed-by:${username}`, { headers });
+        const reviewsRes = await axios.get(`https://api.github.com/search/issues?q=reviewed-by:${encodedUsername}`, { headers });
         reviews = reviewsRes.data.total_count || 0;
       } catch (err) {
         console.warn("Reviews retrieval failed; score will be incomplete until next refresh:", err);
         reviews = 0;
       }
 
-      const gitRankPoints = (commits * 2) + (prs * 5) + (reviews * 10);
+      // --- NEW GITHUB LIVE STREAK CALCULATION LOGIC ---
+      let githubStreak = 0;
+      try {
+        const eventsRes = await axios.get(`https://api.github.com/users/${username}/events?per_page=100`, { headers });
+        const events = eventsRes.data;
+        
+        // Extract unique dates of events (YYYY-MM-DD format)
+        const eventDates = new Set(
+          events
+            .filter(e => e.created_at)
+            .map(e => e.created_at.split('T')[0])
+        );
+        
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+        
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+        let dateToCheck = new Date(today);
+        
+        if (eventDates.has(todayStr)) {
+          // Streak is active today
+        } else if (eventDates.has(yesterdayStr)) {
+          // Streak was active yesterday, count from yesterday
+          dateToCheck = yesterday;
+        } else {
+          // No active streak
+          dateToCheck = null;
+        }
+
+        if (dateToCheck) {
+          while (true) {
+            const checkStr = dateToCheck.toISOString().split('T')[0];
+            if (eventDates.has(checkStr)) {
+              githubStreak++;
+              dateToCheck.setDate(dateToCheck.getDate() - 1);
+            } else {
+              break; // Streak broken
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("GitHub events retrieval failed for streak:", err);
+      }
+
+      // Add points for each day of the active GitHub streak (+10 XP per day)
+      const gitRankPoints = (commits * 2) + (prs * 5) + (reviews * 10) + (githubStreak * 10);
 
       return {
         commits,
@@ -265,6 +333,7 @@ export const AuthProvider = ({ children }) => {
         stars,
         followers,
         primaryLanguage,
+        githubStreak,
         gitRankPoints
       };
     } catch (error) {
@@ -277,6 +346,7 @@ export const AuthProvider = ({ children }) => {
         stars: 0,
         followers: 0,
         primaryLanguage: "JavaScript",
+        githubStreak: 0,
         gitRankPoints: 0
       };
     }
@@ -323,6 +393,7 @@ export const AuthProvider = ({ children }) => {
         "githubStats.stars": ghStats.stars,
         "githubStats.followers": ghStats.followers,
         "githubStats.primaryLanguage": ghStats.primaryLanguage,
+        "githubStreak": ghStats.githubStreak, // Syncs live streak to Firestore
         "points.gitRankPoints": newGitRankPoints,
         "points.totalPoints": newTotalPoints,
         "lastSync": new Date().toISOString()
@@ -338,7 +409,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, userData, loading, isOnboarding, login, logout, fetchGitHubStats, syncGitHubData, ghAccessToken, setUserData }}>
+<AuthContext.Provider value={{ user, userData, loading, isOnboarding, login, logout, fetchGitHubStats, syncGitHubData, ghAccessToken, setUserData }}>
       {children}
     </AuthContext.Provider>
   );
