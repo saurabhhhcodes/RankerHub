@@ -158,11 +158,11 @@ export const AuthProvider = ({ children }) => {
           onboardingStatus: "incomplete",
           privateRepoSyncEnabled: requestRepoScope,
           city: "",
-        streak: 1, // Start streak
-        longestStreak: 0,
-        githubStreak: 0,
-        lastLogin: today.toISOString(),
-        createdAt: today.toISOString(),
+          streak: 1, // Start streak
+          longestStreak: 0,
+          githubStreak: 0,
+          lastLogin: today.toISOString(),
+          createdAt: today.toISOString(),
           points: {
             gitRankPoints: 0, 
             codingVersePoints: 0,
@@ -452,7 +452,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-<AuthContext.Provider value={{ user, userData, loading, isOnboarding, login, logout, fetchGitHubStats, syncGitHubData, ghAccessToken, setUserData }}>
+    <AuthContext.Provider value={{ user, userData, loading, isOnboarding, login, logout, fetchGitHubStats, syncGitHubData, ghAccessToken, setUserData }}>
       {children}
     </AuthContext.Provider>
   );
