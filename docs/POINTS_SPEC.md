@@ -19,7 +19,7 @@ Users earn fixed XP bounties upon successfully passing all test cases for algori
 * **Hard:** +200 XP
 
 ### 🔥 Streak Points (Platform Engagement)
-Daily active engagement is rewarded to encourage consistent learning. 
+Daily active engagement is rewarded to encourage consistent learning.
 * **Daily Login XP:** +10 XP per consecutive day.
 * **Maximum Cap:** 100 XP maximum per streak cycle to prevent runaway inflation.
 
@@ -31,10 +31,9 @@ Growing the community grants a flat bounty.
 
 ## 2. Security Rules & Anti-Cheat Constraints
 
-To protect the integrity of the leaderboard and prevent point hacking, our `firestore.rules` strictly enforce limits on single-client writes. 
+To protect the integrity of the leaderboard and prevent point hacking, our `firestore.rules` strictly enforce limits on single-client writes.
 
 ### Write Limits & Validation
 * **Maximum Delta per Request:** A single client payload cannot increase a user's total score by an unrealistic margin. For example, a single document update cannot increment the `totalXP` field by more than the maximum possible bounty (e.g., +200 XP for a Hard challenge).
 * **Backend Authority:** Complex aggregations (like massive GitPoint dumps) are processed via secure backend Cloud Functions, bypassing client-side write access entirely.
 * **Validation:** Client requests attempting to spoof an XP increment that does not match the documented formulas above will be rejected by Firestore with a `permission-denied` error.
-
