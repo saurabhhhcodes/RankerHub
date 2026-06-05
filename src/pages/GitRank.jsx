@@ -20,8 +20,8 @@ export const GitRank = () => {
   const searchTerm = searchParams.get("search") || "";
   const selectedLanguage = searchParams.get("lang") || "All";
 
-  // Active Tab for Referral Leaderboard (Issue #214)
-  const [activeTab, setActiveTab] = useState("gitrank"); // "gitrank" | "referrals"
+  // Active Tab for Referral Leaderboard (Issue #310) - Now synced with URL
+  const activeTab = searchParams.get("tab") || "gitrank";
 
   const handleSearchChange = (e) => {
     const val = e.target.value;
@@ -36,6 +36,12 @@ export const GitRank = () => {
     const newParams = new URLSearchParams(searchParams);
     if (lang !== "All") newParams.set("lang", lang);
     else newParams.delete("lang");
+    setSearchParams(newParams);
+  };
+
+  const handleTabChange = (tabName) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("tab", tabName);
     setSearchParams(newParams);
   };
   
@@ -905,7 +911,7 @@ export const GitRank = () => {
         {/* NEW TAB SYSTEM FOR REFERRAL LEADERBOARD */}
         <div className="flex items-center gap-2 mb-6 p-1 bg-slate-100 dark:bg-slate-800/50 rounded-xl w-fit">
           <button
-            onClick={() => setActiveTab("gitrank")}
+            onClick={() => handleTabChange("gitrank")}
             className={`px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 ${
               activeTab === "gitrank"
                 ? "bg-white dark:bg-slate-700 text-violet-600 dark:text-violet-400 shadow-sm"
@@ -916,7 +922,7 @@ export const GitRank = () => {
             GitRank Leaderboard
           </button>
           <button
-            onClick={() => setActiveTab("referrals")}
+            onClick={() => handleTabChange("referrals")}
             className={`px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 ${
               activeTab === "referrals"
                 ? "bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm"
