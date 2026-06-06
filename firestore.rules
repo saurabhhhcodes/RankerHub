@@ -68,7 +68,7 @@ service cloud.firestore {
           (resource.data.onboardingStatus == "incomplete" && request.resource.data.onboardingStatus == "complete") ||
           // Or points are unchanged or incremented by small, legitimate amounts (like a streak login +2, codingverse easy +5)
           (request.resource.data.points.totalPoints == resource.data.points.totalPoints) ||
-          (request.resource.data.points.totalPoints > resource.data.points.totalPoints && request.resource.data.points.totalPoints - resource.data.points.totalPoints <= 100) ||
+          (request.resource.data.points.totalPoints > resource.data.points.totalPoints && request.resource.data.points.totalPoints - resource.data.points.totalPoints <= 200) ||
           // Or they are updating their GitHub stats, and the GitRank points matches the formula, and other points are unchanged:
           (
             request.resource.data.points.gitRankPoints == (
