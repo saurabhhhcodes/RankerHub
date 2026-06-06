@@ -21,33 +21,24 @@ export const CodingOwl = () => {
     localStorage.setItem("codingOwlHabits", JSON.stringify(habits));
   }, [habits]);
 
-  // --- Pomodoro Persistence Logic ---
-  const [timeLeft, setTimeLeft] = useState(1500); // Default 25 mins
-  const [timerActive, setTimerActive] = useState(false);
-  const timerRef = useRef(null);
-
-  useEffect(() => {
+  // --- Pomodoro Persistence Logic (Refactored for strict linting) ---
+  const getInitialTimerState = () => {
     const savedEndTime = localStorage.getItem("pomodoroEndTime");
     if (savedEndTime) {
       const remainingTime = Math.floor((parseInt(savedEndTime, 10) - Date.now()) / 1000);
-      if (remainingTime > 0) {
-        setTimeLeft(remainingTime);
-        setTimerActive(true);
-      } else {
-        localStorage.removeItem("pomodoroEndTime");
-        setTimeLeft(0);
-      }
+      if (remainingTime > 0) return { timeLeft: remainingTime, active: true };
+      localStorage.removeItem("pomodoroEndTime");
     }
-  }, []);
+    return { timeLeft: 1500, active: false }; // Default 25 mins
+  };
+
+  const initialTimer = getInitialTimerState();
+  const [timeLeft, setTimeLeft] = useState(initialTimer.timeLeft);
+  const [timerActive, setTimerActive] = useState(initialTimer.active);
+  const timerRef = useRef(null);
 
   useEffect(() => {
     if (timerActive) {
-      // If timer just started and hasn't been saved yet
-      if (!localStorage.getItem("pomodoroEndTime")) {
-        const endTime = Date.now() + timeLeft * 1000;
-        localStorage.setItem("pomodoroEndTime", endTime.toString());
-      }
-
       timerRef.current = setInterval(() => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
@@ -65,7 +56,7 @@ export const CodingOwl = () => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [timerActive]); // Intentionally omitting timeLeft from deps to avoid re-triggering interval
+  }, [timerActive]); 
 
   const toggleTimer = () => {
     if (timerActive) {
@@ -75,6 +66,8 @@ export const CodingOwl = () => {
     } else {
       // Starting/Resuming the timer
       setTimerActive(true);
+      const endTime = Date.now() + timeLeft * 1000;
+      localStorage.setItem("pomodoroEndTime", endTime.toString());
     }
   };
 
@@ -220,7 +213,7 @@ export const CodingOwl = () => {
                 </div>
 
                 <button
-                  onClick={() => toggleHabit.complete(habit.id)}
+                  onClick={() => toggleHabitComplete(habit.id)}
                   className={`w-full py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
                     habit.progress === 100
                       ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
