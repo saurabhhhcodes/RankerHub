@@ -108,6 +108,8 @@ service cloud.firestore {
       // Locks referralPoints to the actual totalEarned value in the referrals index.
       allow update: if isAuthenticated()
         && request.auth.uid != uid
+        // Prevent modifying any root-level fields other than points
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['points'])
         // FIX: Sync referralPoints directly with the referrals index document's totalEarned counter
         && request.resource.data.points.referralPoints == get(/databases/$(database)/documents/referrals/$(uid)).data.totalEarned
         // FIX: Total points must reflect the exact growth in referral points
