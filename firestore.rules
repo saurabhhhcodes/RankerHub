@@ -36,7 +36,8 @@ service cloud.firestore {
         // PREVENT TAMPERING: Other points must remain frozen during a streak update
         && request.resource.data.points.gitRankPoints == resource.data.points.gitRankPoints
         && request.resource.data.points.codingVersePoints == resource.data.points.codingVersePoints
-        && request.resource.data.points.referralPoints == resource.data.points.referralPoints;
+        && request.resource.data.points.referralPoints == resource.data.points.referralPoints
+        && request.resource.data.points.auditorPoints == resource.data.points.auditorPoints;
     }
 
     match /users/{uid} {
@@ -94,6 +95,7 @@ service cloud.firestore {
             request.resource.data.points.codingVersePoints == resource.data.points.codingVersePoints &&
             request.resource.data.points.streakPoints == resource.data.points.streakPoints &&
             request.resource.data.points.referralPoints == resource.data.points.referralPoints &&
+            request.resource.data.points.auditorPoints == resource.data.points.auditorPoints &&
             request.resource.data.lastSync == request.time &&
             (
               !("lastSync" in resource.data) || 
@@ -116,6 +118,7 @@ service cloud.firestore {
         && request.resource.data.points.gitRankPoints == resource.data.points.gitRankPoints
         && request.resource.data.points.codingVersePoints == resource.data.points.codingVersePoints
         && request.resource.data.points.streakPoints == resource.data.points.streakPoints
+        && request.resource.data.points.auditorPoints == resource.data.points.auditorPoints
         && exists(/databases/$(database)/documents/referrals/$(uid))
         && request.auth.uid in get(/databases/$(database)/documents/referrals/$(uid)).data.usedBy;
     }

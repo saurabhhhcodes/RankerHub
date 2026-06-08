@@ -22,6 +22,7 @@ import Privacy from "../pages/Privacy";
 import ComingSoonCard from "../components/ui/ComingSoonCard";
 import GlobalModals from "../components/ui/GlobalModals";
 import { Settings as SettingsIcon } from "lucide-react";
+import Auditor from "../pages/Auditor";
 
 // Inline loading indicator
 const LoadingScreen = ({ message }) => (
@@ -155,6 +156,7 @@ export const AppRoutes = () => {
           <Route path="/dashboard/profile/:username" element={<Profile />} />
           <Route path="/dashboard/profile/card-builder" element={<CardBuilder />} />
           <Route path="/dashboard/settings" element={<SettingsPage />} />
+          <Route path="/dashboard/auditor" element={<Auditor />} />
         </Route>
 
         {/* 404 Catch All */}
