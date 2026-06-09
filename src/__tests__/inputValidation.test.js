@@ -36,4 +36,9 @@ describe("inputValidation XSS detection", () => {
     const malicious = "Hello <script>alert(1)</script> World";
     expect(sanitizeText(malicious)).toBe("Hello World");
   });
+
+  it("should sanitize multiple malicious patterns correctly", () => {
+    const malicious = "Hello <script>alert(1)</script> and <script>alert(2)</script> World";
+    expect(sanitizeText(malicious)).toBe("Hello and World");
+  });
 });

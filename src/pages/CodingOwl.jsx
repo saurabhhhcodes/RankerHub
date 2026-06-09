@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Timer, Plus, Check, ShoppingCart, Zap, CircleDollarSign } from "lucide-react";
+import { Timer, Plus, Check, ShoppingCart, CircleDollarSign } from "lucide-react";
 import { habitCards, weeklyHeatmap } from "../data/streaks";
 import Card from "../components/ui/Card";
 import SectionHeader from "../components/ui/SectionHeader";

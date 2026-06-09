@@ -19,6 +19,11 @@ const DANGEROUS_PATTERNS = [
   /expression\(/i,
 ];
 
+// Global version of dangerous patterns for sanitization to remove all occurrences
+const DANGEROUS_PATTERNS_GLOBAL = DANGEROUS_PATTERNS.map(
+  (pattern) => new RegExp(pattern.source, pattern.flags + 'g')
+);
+
 /**
  * Sanitize text by removing dangerous HTML and JavaScript
  * @param {string} text - Input text to sanitize
@@ -29,8 +34,8 @@ export const sanitizeText = (text) => {
 
   let sanitized = text.trim();
 
-  // Remove dangerous patterns
-  for (const pattern of DANGEROUS_PATTERNS) {
+  // Remove dangerous patterns (all occurrences)
+  for (const pattern of DANGEROUS_PATTERNS_GLOBAL) {
     sanitized = sanitized.replace(pattern, '');
   }
 
