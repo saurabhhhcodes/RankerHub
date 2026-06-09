@@ -17,8 +17,8 @@ export const searchLeaderboard = (query, includeWomen = false) => {
   }
 
   return allData.filter((user) => {
-    const name = user.name.toLowerCase();
-    const username = user.username.toLowerCase();
+    const name = (user.name || "").toLowerCase();
+    const username = (user.username || "").toLowerCase();
     const role = (user.role || "").toLowerCase();
     const language = (user.language || "").toLowerCase();
 
@@ -127,31 +127,43 @@ export const getSearchSuggestions = (users, query) => {
   if (!query || query.trim().length < 1) return [];
 
   const searchTerm = query.toLowerCase().trim();
-  const suggestions = new Set();
+  const suggestionsMap = new Map();
 
   users.forEach((user) => {
-    if (user.name.toLowerCase().startsWith(searchTerm)) {
-      suggestions.add({
-        type: "name",
-        value: user.name,
-        display: `${user.name} (@${user.username})`
-      });
+    const name = user.name || "";
+    const username = user.username || "";
+
+    if (name.toLowerCase().startsWith(searchTerm)) {
+      const key = `name:${name}`;
+      if (!suggestionsMap.has(key)) {
+        suggestionsMap.set(key, {
+          type: "name",
+          value: name,
+          display: `${name} (@${username})`
+        });
+      }
     }
-    if (user.username.toLowerCase().startsWith(searchTerm)) {
-      suggestions.add({
-        type: "username",
-        value: user.username,
-        display: `@${user.username}`
-      });
+    if (username.toLowerCase().startsWith(searchTerm)) {
+      const key = `username:${username}`;
+      if (!suggestionsMap.has(key)) {
+        suggestionsMap.set(key, {
+          type: "username",
+          value: username,
+          display: `@${username}`
+        });
+      }
     }
     if (user.language && user.language.toLowerCase().includes(searchTerm)) {
-      suggestions.add({
-        type: "language",
-        value: user.language,
-        display: `Language: ${user.language}`
-      });
+      const key = `language:${user.language}`;
+      if (!suggestionsMap.has(key)) {
+        suggestionsMap.set(key, {
+          type: "language",
+          value: user.language,
+          display: `Language: ${user.language}`
+        });
+      }
     }
   });
 
-  return Array.from(suggestions).slice(0, 5);
+  return Array.from(suggestionsMap.values()).slice(0, 5);
 };

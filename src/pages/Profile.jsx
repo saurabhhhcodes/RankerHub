@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import domtoimage from 'dom-to-image-more';
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import LottiePlayer from "../components/ui/LottiePlayer";
 import {
@@ -36,6 +36,7 @@ import Toast from "../components/ui/Toast";
 import collegesList from "../data/colleges.json";
 
 export const Profile = () => {
+  const navigate = useNavigate();
   const { userData: authUserData, user, setUserData, syncGitHubData } = useAuth();
   const { username } = useParams();
   const [publicProfile, setPublicProfile] = useState(null);
@@ -1102,7 +1103,7 @@ export const Profile = () => {
             <GradientButton onClick={handleDownloadProfileCard} className="py-2.5 px-4 text-xs">
               Download Profile Card
             </GradientButton>
-            <GradientButton onClick={() => window.location.href='/dashboard/profile/card-builder'} className="py-2.5 px-4 text-xs bg-gradient-to-r from-blue-500 to-indigo-500">
+            <GradientButton onClick={() => navigate('/dashboard/profile/card-builder')} className="py-2.5 px-4 text-xs bg-gradient-to-r from-blue-500 to-indigo-500">
               Build GitHub DevCard
             </GradientButton>
           </>

@@ -13,7 +13,8 @@ import {
   updateDoc,
   onSnapshot,
   writeBatch,
-  serverTimestamp
+  serverTimestamp,
+  runTransaction
 } from "firebase/firestore";
 import axios from "axios";
 import { auth, db, signInWithGitHub, signOutUser } from "../lib/firebase";
@@ -28,49 +29,67 @@ const checkAndUpdateStreak = async (data, docRef) => {
   if (!data || data.onboardingStatus !== "complete") return;
   const now = new Date();
   const lastLoginDate = data.lastLogin ? new Date(data.lastLogin) : null;
-  
-  if (!lastLoginDate || lastLoginDate.toDateString() !== now.toDateString()) {
-    let newStreak = data.streak || 1;
-    let newStreakPoints = data.points?.streakPoints || 0;
-    
-    if (lastLoginDate) {
-      const yesterday = new Date(now);
-      yesterday.setDate(yesterday.getDate() - 1);
 
-      const lastLoginDateStr = lastLoginDate.toDateString();
-      const todayStr = now.toDateString();
-      const yesterdayStr = yesterday.toDateString();
+  //  GUARD 1 (Client-side): 
+  if (lastLoginDate && lastLoginDate.toDateString() === now.toDateString()) {
+    return;
+  }
 
-      if (lastLoginDateStr === yesterdayStr) {
-        newStreak += 1;
-        newStreakPoints += 10;
-      } else if (lastLoginDateStr !== todayStr) {
+  try {
+    await runTransaction(db, async (transaction) => {
+      //  Read absolute latest data from server
+      const userDoc = await transaction.get(docRef);
+      if (!userDoc.exists()) return;
+
+      const latestData = userDoc.data();
+      const currentNow = new Date();
+      const latestLastLogin = latestData.lastLogin ? new Date(latestData.lastLogin) : null;
+
+      //  GUARD 2 (Server-side Atomic Check):
+      if (latestLastLogin && latestLastLogin.toDateString() === currentNow.toDateString()) {
+        return;
+      }
+
+      let newStreak = latestData.streak || 1;
+      let newStreakPoints = latestData.points?.streakPoints || 0;
+
+      if (latestLastLogin) {
+        const yesterday = new Date(currentNow);
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        const lastLoginDateStr = latestLastLogin.toDateString();
+        const yesterdayStr = yesterday.toDateString();
+
+        if (lastLoginDateStr === yesterdayStr) {
+          newStreak += 1;
+          newStreakPoints += 10;
+        } else {
+          newStreak = 1;
+        }
+      } else {
         newStreak = 1;
       }
-    } else {
-      newStreak = 1;
-    }
-    
-    const newTotalPoints = (data.points?.gitRankPoints || 0) + 
-                           (data.points?.referralPoints || 0) + 
-                           (data.points?.codingVersePoints || 0) + 
-                           newStreakPoints;
-                           
-    const newLongestStreak = Math.max(data.longestStreak || 0, newStreak);
 
-    try {
-      await updateDoc(docRef, {
+      const newTotalPoints = (latestData.points?.gitRankPoints || 0) + 
+                             (latestData.points?.referralPoints || 0) + 
+                             (latestData.points?.codingVersePoints || 0) + 
+                             newStreakPoints;
+                             
+      const newLongestStreak = Math.max(latestData.longestStreak || 0, newStreak);
+
+      // 📝 Write atomic update
+      transaction.update(docRef, {
         streak: newStreak,
         longestStreak: newLongestStreak,
-        lastLogin: now.toISOString(),
+        lastLogin: currentNow.toISOString(),
         "points.streakPoints": newStreakPoints,
         "points.totalPoints": newTotalPoints,
         hubCoins: (data.hubCoins || 0) + 10
       });
-      console.log("Streak updated successfully. New Streak:", newStreak, "| Longest:", newLongestStreak);
-    } catch (err) {
-      console.error("Failed to update streak:", err);
-    }
+    });
+    console.log("Streak updated successfully via Thread-Safe Atomic Transaction.");
+  } catch (err) {
+    console.error("Failed to update streak atomically:", err);
   }
 };
 

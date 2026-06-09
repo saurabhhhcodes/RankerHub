@@ -40,6 +40,11 @@ export const CodingOwl = () => {
         const remainingTime = Math.floor((parseInt(savedEndTime, 10) - Date.now()) / 1000);
         if (remainingTime > 0) return remainingTime;
       }
+      const savedTimeLeft = localStorage.getItem("pomodoroTimeLeft");
+      if (savedTimeLeft) {
+        const parsed = parseInt(savedTimeLeft, 10);
+        if (parsed > 0) return parsed;
+      }
     }
     return 1500; // Default 25 mins
   });
@@ -65,6 +70,7 @@ export const CodingOwl = () => {
             clearInterval(timerRef.current);
             setTimerActive(false);
             localStorage.removeItem("pomodoroEndTime");
+            localStorage.removeItem("pomodoroTimeLeft");
             return 0;
           }
           return prev - 1;
@@ -83,11 +89,13 @@ export const CodingOwl = () => {
       // Pausing the timer
       setTimerActive(false);
       localStorage.removeItem("pomodoroEndTime");
+      localStorage.setItem("pomodoroTimeLeft", timeLeft.toString());
     } else {
       // Starting/Resuming the timer
       setTimerActive(true);
       const endTime = Date.now() + timeLeft * 1000;
       localStorage.setItem("pomodoroEndTime", endTime.toString());
+      localStorage.removeItem("pomodoroTimeLeft");
     }
   };
 
@@ -95,6 +103,7 @@ export const CodingOwl = () => {
     setTimerActive(false);
     setTimeLeft(1500);
     localStorage.removeItem("pomodoroEndTime");
+    localStorage.removeItem("pomodoroTimeLeft");
   };
 
   const formatTime = (seconds) => {
