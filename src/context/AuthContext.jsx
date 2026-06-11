@@ -377,22 +377,37 @@ export const AuthProvider = ({ children }) => {
 
   const purchaseMascot = async (mascotId, price) => {
     if (!user || !userData) throw new Error("Not authenticated");
-    const currentCoins = userData.hubCoins ?? 500;
-    if (currentCoins < price) {
-      throw new Error("Insufficient HubCoins");
-    }
-    const currentInventory = userData.inventory || ["oliver"];
-    if (currentInventory.includes(mascotId)) {
-      throw new Error("Mascot already owned");
-    }
-    
+
     try {
       const userRef = doc(db, "users", user.uid);
-      await updateDoc(userRef, {
-        hubCoins: currentCoins - price,
-        inventory: [...currentInventory, mascotId],
-        updatedAt: new Date().toISOString() // needed for firestore rules sometimes
+
+      await runTransaction(db, async (transaction) => {
+        // Read live Firestore data inside the transaction to prevent stale
+        // client-side state from being used as the source of truth.
+        // This guards against concurrent purchases from multiple tabs or
+        // devices spending the same hubCoins balance simultaneously.
+        const userDoc = await transaction.get(userRef);
+        if (!userDoc.exists()) throw new Error("User document not found");
+
+        const liveData = userDoc.data();
+        const liveCoins = liveData.hubCoins ?? 0;
+        const liveInventory = liveData.inventory || ["oliver"];
+
+        if (liveCoins < price) {
+          throw new Error("Insufficient HubCoins");
+        }
+
+        if (liveInventory.includes(mascotId)) {
+          throw new Error("Mascot already owned");
+        }
+
+        transaction.update(userRef, {
+          hubCoins: liveCoins - price,
+          inventory: [...liveInventory, mascotId],
+          updatedAt: new Date().toISOString()
+        });
       });
+
       console.log(`Purchased mascot ${mascotId}`);
     } catch (err) {
       console.error("Failed to purchase mascot:", err);
