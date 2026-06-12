@@ -8,7 +8,8 @@ export const StreakCard = () => {
   
   const activeStreak = userData?.streak || 0;
   const longestStreak = Math.max(userData?.longestStreak || 0, activeStreak);
-  
+  const streakFreezes = userData?.streakFreezes || 0;
+
   // Calculate today's status
   const now = new Date();
   const todayStr = now.toDateString();
@@ -76,10 +77,18 @@ export const StreakCard = () => {
           <h3 className="font-extrabold text-lg text-slate-900 dark:text-white">Streak Tracker</h3>
           <p className="text-xs text-slate-400 dark:text-slate-500">Keep up your daily coding habit</p>
         </div>
-        <div className="flex items-center gap-1 text-orange-500 dark:text-orange-400 font-extrabold text-sm animate-pulse">
-          <Flame className="w-5 h-5 fill-orange-500/20" />
-          <span>{activeStreak} Days</span>
-        </div>
+       <div className="flex flex-col items-end gap-1">
+  <div className="flex items-center gap-1 text-orange-500 dark:text-orange-400 font-extrabold text-sm animate-pulse">
+    <Flame className="w-5 h-5 fill-orange-500/20" />
+    <span>{activeStreak} Days</span>
+  </div>
+  {streakFreezes > 0 && (
+    <div className="flex items-center gap-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full text-[10px] font-bold">
+      <span>🧊</span>
+      <span>{streakFreezes} Freeze{streakFreezes > 1 ? "s" : ""}</span>
+    </div>
+  )}
+</div>
       </div>
 
       {/* Progress Circle & Metrics */}
