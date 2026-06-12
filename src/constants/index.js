@@ -3,11 +3,13 @@ export const sidebarLinks = [
   { label: "CodingVerse", path: "/dashboard/codingverse", icon: "Code2" },
   { label: "GitRank", path: "/dashboard/gitrank", icon: "Github" },
   { label: "CodingOwl", path: "/dashboard/codingowl", icon: "BookOpen" },
+  { label: "OS Matchmaker", path: "/dashboard/matchmaker", icon: "Search" },
   { label: "RankHer", path: "/dashboard/rankher", icon: "Sparkles" },
   { label: "Achievements", path: "/dashboard/achievements", icon: "Award" },
   { label: "Friends", path: "/dashboard/friends", icon: "UsersRound" },
   { label: "Profile", path: "/dashboard/profile", icon: "User" },
   { label: "Settings", path: "/dashboard/settings", icon: "Settings" },
+  { label: "Repo Auditor", path: "/dashboard/auditor", icon: "Activity" },
   { label: "How it works", path: "?modal=how-it-works", icon: "HelpCircle" },
   { label: "About Us", path: "/about", icon: "Info" }
 ];

@@ -2,7 +2,9 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import {
   onAuthStateChanged,
-  getAdditionalUserInfo
+  getAdditionalUserInfo,
+  getRedirectResult,
+  GithubAuthProvider
 } from "firebase/auth";
 import {
   doc,
@@ -11,10 +13,12 @@ import {
   updateDoc,
   onSnapshot,
   writeBatch,
-  serverTimestamp
+  serverTimestamp,
+  runTransaction
 } from "firebase/firestore";
 import axios from "axios";
 import { auth, db, signInWithGitHub, signOutUser } from "../lib/firebase";
+import { validateUserData } from "../utils/inputValidation";
 import { userDataCache, listenerOptimizer } from "../utils/firestoreOptimization";
 import { calculateStreak, getTodayString } from "../utils/streakUtils";
 
@@ -83,6 +87,63 @@ export const AuthProvider = ({ children }) => {
 
     let unsubscribeSnapshot = null;
 
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (result) {
+          const authUser = result.user;
+          const credential = GithubAuthProvider.credentialFromResult(result);
+          const accessToken = credential?.accessToken || null;
+          if (accessToken) {
+            setGhAccessToken(accessToken);
+            sessionStorage.setItem(`gh_token_${authUser.uid}`, accessToken);
+          }
+
+          const additionalInfo = getAdditionalUserInfo(result);
+          const githubUsername = (additionalInfo?.username || authUser.displayName || "").trim();
+          const githubId = additionalInfo?.profile?.id || null;
+          const avatar = additionalInfo?.profile?.avatar_url || authUser.photoURL || "";
+
+          const userDocRef = doc(db, "users", authUser.uid);
+          const docSnap = await getDoc(userDocRef);
+
+          if (!docSnap.exists()) {
+            const skeletalUser = {
+              uid: authUser.uid,
+              githubUsername,
+              githubId,
+              name: authUser.displayName || githubUsername || "Developer",
+              email: authUser.email || "",
+              avatar,
+              onboardingStatus: "incomplete",
+              privateRepoSyncEnabled: true,
+              city: "",
+              streak: 0,
+              longestStreak: 0,
+              githubStreak: 0,
+              lastLogin: new Date().toISOString(),
+              createdAt: new Date().toISOString(),
+              points: {
+                gitRankPoints: 0,
+                codingVersePoints: 0,
+                streakPoints: 0,
+                referralPoints: 0,
+                auditorPoints: 0,
+                totalPoints: 0
+              },
+              lastAuditReward: null
+            };
+            await setDoc(userDocRef, skeletalUser);
+          } else {
+            await setDoc(userDocRef, {
+              lastLogin: new Date().toISOString(),
+            }, { merge: true });
+          }
+        }
+      })
+      .catch((error) => {
+        console.error("Redirect sign-in resolution failure:", error);
+      });
+
     const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
       if (unsubscribeSnapshot) {
         unsubscribeSnapshot();
@@ -142,32 +203,51 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (requestRepoScope = true) => {
-    setLoading(true);
     try {
-      const { user: authUser, accessToken, result } = await signInWithGitHub(requestRepoScope);
+      const response = await signInWithGitHub(requestRepoScope);
+      setLoading(true);
+      if (!response) {
+        return null;
+      }
+      const { user: authUser, accessToken, result } = response;
 
       const additionalInfo = getAdditionalUserInfo(result);
-      const githubUsername = (additionalInfo?.username || authUser.displayName || "").trim();
+      const rawUserData = {
+        githubUsername: additionalInfo?.username || authUser.displayName || "",
+        name: authUser.displayName || additionalInfo?.username || "Developer",
+        email: authUser.email || "",
+        avatar: additionalInfo?.profile?.avatar_url || authUser.photoURL || ""
+      };
+
+      const validation = validateUserData(rawUserData);
+      if (!validation.isValid) {
+        console.warn("User data validation warnings:", validation.errors);
+      }
+
+      const sanitizedUserData = validation.sanitized;
       const githubId = additionalInfo?.profile?.id || null;
-      const avatar = additionalInfo?.profile?.avatar_url || authUser.photoURL || "";
 
       setGhAccessToken(accessToken);
+      sessionStorage.setItem(`gh_token_${authUser.uid}`, accessToken);
 
       const userDocRef = doc(db, "users", authUser.uid);
       const docSnap = await getDoc(userDocRef);
 
+      const today = new Date();
+
       if (!docSnap.exists()) {
+        // First login ever — initialize user document with base streak
         const skeletalUser = {
           uid: authUser.uid,
-          githubUsername,
+          githubUsername: sanitizedUserData.githubUsername,
           githubId,
-          name: authUser.displayName || githubUsername || "Developer",
-          email: authUser.email || "",
-          avatar,
+          name: sanitizedUserData.name,
+          email: sanitizedUserData.email,
+          avatar: sanitizedUserData.avatar,
           onboardingStatus: "incomplete",
           privateRepoSyncEnabled: requestRepoScope,
           city: "",
-          streak: 0,
+          streak: 1,
           longestStreak: 0,
           githubStreak: 0,
           streakFreezes: 1,
@@ -176,17 +256,26 @@ export const AuthProvider = ({ children }) => {
           lastLogin: new Date().toISOString(),
           createdAt: new Date().toISOString(),
           points: {
-            gitRankPoints: 0, 
+            gitRankPoints: 0,
             codingVersePoints: 0,
-            streakPoints: 0,
+            streakPoints: 10,
             referralPoints: 0,
-            totalPoints: 0
-          }
+            auditorPoints: 0,
+            totalPoints: 10
+          },
+          hubCoins: 500,
+          inventory: ["oliver"],
+          activeMascot: "oliver",
+          lastAuditReward: null
         };
         await setDoc(userDocRef, skeletalUser);
       } else {
+        // Existing user: only update lastLogin and repo scope here.
+        // Streak calculation is handled exclusively by checkAndUpdateStreak()
+        // via an atomic runTransaction triggered by the onSnapshot listener.
+        // Duplicating streak logic here caused double streak points on login day.
         await setDoc(userDocRef, {
-          lastLogin: new Date().toISOString(),
+          lastLogin: today.toISOString(),
           ...(requestRepoScope && { privateRepoSyncEnabled: true })
         }, { merge: true });
       }
@@ -203,6 +292,9 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     try {
       await signOutUser();
+      if (user?.uid) {
+        sessionStorage.removeItem(`gh_token_${user.uid}`);
+      }
       setUser(null);
       setUserData(null);
       setIsOnboarding(false);
@@ -211,6 +303,65 @@ export const AuthProvider = ({ children }) => {
       console.error("Logout failure:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const purchaseMascot = async (mascotId, price) => {
+    if (!user || !userData) throw new Error("Not authenticated");
+
+    try {
+      const userRef = doc(db, "users", user.uid);
+
+      await runTransaction(db, async (transaction) => {
+        // Read live Firestore data inside the transaction to prevent stale
+        // client-side state from being used as the source of truth.
+        // This guards against concurrent purchases from multiple tabs or
+        // devices spending the same hubCoins balance simultaneously.
+        const userDoc = await transaction.get(userRef);
+        if (!userDoc.exists()) throw new Error("User document not found");
+
+        const liveData = userDoc.data();
+        const liveCoins = liveData.hubCoins ?? 0;
+        const liveInventory = liveData.inventory || ["oliver"];
+
+        if (liveCoins < price) {
+          throw new Error("Insufficient HubCoins");
+        }
+
+        if (liveInventory.includes(mascotId)) {
+          throw new Error("Mascot already owned");
+        }
+
+        transaction.update(userRef, {
+          hubCoins: liveCoins - price,
+          inventory: [...liveInventory, mascotId],
+          updatedAt: new Date().toISOString()
+        });
+      });
+
+      console.log(`Purchased mascot ${mascotId}`);
+    } catch (err) {
+      console.error("Failed to purchase mascot:", err);
+      throw err;
+    }
+  };
+
+  const equipMascot = async (mascotId) => {
+    if (!user || !userData) throw new Error("Not authenticated");
+    const currentInventory = userData.inventory || ["oliver"];
+    if (!currentInventory.includes(mascotId)) {
+      throw new Error("Mascot not owned");
+    }
+    
+    try {
+      const userRef = doc(db, "users", user.uid);
+      await updateDoc(userRef, {
+        activeMascot: mascotId,
+        updatedAt: new Date().toISOString()
+      });
+    } catch (err) {
+      console.error("Failed to equip mascot:", err);
+      throw err;
     }
   };
 
@@ -369,7 +520,6 @@ export const AuthProvider = ({ children }) => {
       const lastSyncTime = getTimestamp(userData.lastSync);
       const cooldownMs = 5 * 60 * 1000;
       if (Date.now() - lastSyncTime < cooldownMs) {
-        console.log("Background GitHub sync skipped: Cooldown active.");
         return;
       }
     }

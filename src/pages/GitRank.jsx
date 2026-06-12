@@ -15,10 +15,12 @@ export const GitRank = () => {
 
   // ============================================================
   // ISSUE #194: URL Parameter Sync for State Persistence
+  // ISSUE #362: Server-Side College Filter Integration
   // ============================================================
   const [searchParams, setSearchParams] = useSearchParams();
   const searchTerm = searchParams.get("search") || "";
   const selectedLanguage = searchParams.get("lang") || "All";
+  const selectedCollege = searchParams.get("college") || "All"; // NEW: Server-Side College State
 
   // Active Tab for Referral Leaderboard (Issue #310) - Now synced with URL
   const activeTab = searchParams.get("tab") || "gitrank";
@@ -28,7 +30,6 @@ export const GitRank = () => {
     const newParams = new URLSearchParams(searchParams);
     if (val) newParams.set("search", val);
     else newParams.delete("search");
-    // Use replace: true so we don't bloat the browser history with every keystroke
     setSearchParams(newParams, { replace: true });
   };
 
@@ -37,6 +38,14 @@ export const GitRank = () => {
     if (lang !== "All") newParams.set("lang", lang);
     else newParams.delete("lang");
     setSearchParams(newParams);
+  };
+
+  const handleCollegeChange = (e) => {
+    const val = e.target.value;
+    const newParams = new URLSearchParams(searchParams);
+    if (val) newParams.set("college", val);
+    else newParams.delete("college");
+    setSearchParams(newParams, { replace: true });
   };
 
   const handleTabChange = (tabName) => {
@@ -73,7 +82,7 @@ export const GitRank = () => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoadingUsers(true);
 
-    // Build the query dynamically based on Active Tab
+    // Build the query dynamically based on Active Tab and Tie-Breakers
     const constraints = [
       where("onboardingStatus", "==", "complete"),
     ];
@@ -90,6 +99,11 @@ export const GitRank = () => {
     // DB level language filter
     if (selectedLanguage !== "All") {
       constraints.push(where("githubStats.primaryLanguage", "==", selectedLanguage));
+    }
+
+    // DB level college filter (Resolves Issue #362)
+    if (selectedCollege !== "All" && selectedCollege.trim() !== "") {
+      constraints.push(where("college", "==", selectedCollege));
     }
 
     constraints.push(limit(50));
@@ -121,7 +135,7 @@ export const GitRank = () => {
     );
 
     return () => unsubscribe();
-  }, [selectedLanguage, activeTab]); 
+  }, [selectedLanguage, activeTab, selectedCollege]); 
 
   // Pagination Function (Fetch next 50)
   const loadMoreUsers = async () => {
@@ -144,6 +158,10 @@ export const GitRank = () => {
 
       if (selectedLanguage !== "All") {
         constraints.push(where("githubStats.primaryLanguage", "==", selectedLanguage));
+      }
+
+      if (selectedCollege !== "All" && selectedCollege.trim() !== "") {
+        constraints.push(where("college", "==", selectedCollege));
       }
 
       constraints.push(startAfter(lastVisible));
@@ -235,7 +253,6 @@ export const GitRank = () => {
           const cached = getFromCache(`events_${userData.githubUsername}`);
           if (cached) {
             setEvents(cached);
-            console.log("Using cached events data");
           } else {
             setEvents([]);
           }
@@ -261,7 +278,6 @@ export const GitRank = () => {
           const cached = getFromCache(`repos_${userData.githubUsername}`);
           if (cached) {
             setRepos(cached);
-            console.log("Using cached repos data");
           } else {
             setRepos([]);
           }
@@ -372,7 +388,7 @@ export const GitRank = () => {
     return `${mins}m ${secs}s`;
   };
 
-  // Filter leaderboard lists (Only Search is client side now)
+// Filter leaderboard lists (Only Search is client side now)
   const filteredData = useMemo(() => {
     return usersList.filter((u) => {
       const name = u.name || "";
@@ -387,7 +403,7 @@ export const GitRank = () => {
     return usersList.slice(0, 3);
   }, [usersList]);
 
-  // Chart Parsing
+  // Chart Parsing 1: Weekly Activity
   const weeklyActivityData = useMemo(() => {
     const weeks = Array.from({ length: 8 }, (_, idx) => {
       const start = new Date();
@@ -415,8 +431,9 @@ export const GitRank = () => {
     return weeks;
   }, [events]);
 
+// Chart Parsing 2: Languages Frequency
   const languageChartData = useMemo(() => {
-    if (!repos.length) return []; 
+    if (!repos.length) return [];
     
     const counts = {};
     repos.forEach((r) => {
@@ -449,6 +466,7 @@ export const GitRank = () => {
       .slice(0, 5);
   }, [repos]);
 
+  // Chart Parsing 3: Repository Contributions
   const repositoryContributionData = useMemo(() => {
     if (!events.length) return [];
 
@@ -997,15 +1015,29 @@ export const GitRank = () => {
         </div>
 
         <div className="flex flex-col lg:flex-row items-center justify-between gap-4 pb-6 border-b border-slate-100 dark:border-slate-800">
-          <div className="relative w-full sm:max-w-xs">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Search user..."
-              value={searchTerm}
-              onChange={handleSearchChange}
-              className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-950/20 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 dark:text-white transition-all"
-            />
+          <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+            {/* Search Input */}
+            <div className="relative w-full sm:max-w-xs">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search user..."
+                value={searchTerm}
+                onChange={handleSearchChange}
+                className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-950/20 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 dark:text-white transition-all"
+              />
+            </div>
+
+            {/* NEW: College Filter Input */}
+            <div className="relative w-full sm:max-w-xs">
+              <input
+                type="text"
+                placeholder="Filter by Exact College..."
+                value={selectedCollege === "All" ? "" : selectedCollege}
+                onChange={handleCollegeChange}
+                className="w-full px-4 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-950/20 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 dark:text-white transition-all"
+              />
+            </div>
           </div>
 
           <div className="flex items-center gap-2 overflow-x-auto w-full lg:w-auto pb-2 lg:pb-0 scrollbar-none">
