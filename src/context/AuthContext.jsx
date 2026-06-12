@@ -16,6 +16,7 @@ import {
 import axios from "axios";
 import { auth, db, signInWithGitHub, signOutUser } from "../lib/firebase";
 import { userDataCache, listenerOptimizer } from "../utils/firestoreOptimization";
+import { calculateStreak, getTodayString } from "../utils/streakUtils";
 
 const AuthContext = createContext({});
 
@@ -23,50 +24,47 @@ export const useAuth = () => useContext(AuthContext);
 
 const checkAndUpdateStreak = async (data, docRef) => {
   if (!data || data.onboardingStatus !== "complete") return;
-  const now = new Date();
-  const lastLoginDate = data.lastLogin ? new Date(data.lastLogin) : null;
-  
-  if (!lastLoginDate || lastLoginDate.toDateString() !== now.toDateString()) {
-    let newStreak = data.streak || 1;
-    let newStreakPoints = data.points?.streakPoints || 0;
-    
-    if (lastLoginDate) {
-      const yesterday = new Date(now);
-      yesterday.setDate(yesterday.getDate() - 1);
 
-      const lastLoginDateStr = lastLoginDate.toDateString();
-      const todayStr = now.toDateString();
-      const yesterdayStr = yesterday.toDateString();
+  const lastActiveDate = data.lastActiveDate || null;
+  const currentStreak = data.streak || 0;
+  const streakFreezes = data.streakFreezes || 0;
 
-      if (lastLoginDateStr === yesterdayStr) {
-        newStreak += 1;
-        newStreakPoints += 10;
-      } else if (lastLoginDateStr !== todayStr) {
-        newStreak = 1;
-      }
-    } else {
-      newStreak = 1;
+  // Skip if already updated today
+  if (lastActiveDate === getTodayString()) return;
+
+  const { newStreak, newLastActiveDate, newStreakFreezes, usedFreeze } =
+    calculateStreak(lastActiveDate, currentStreak, streakFreezes);
+
+  let newStreakPoints = data.points?.streakPoints || 0;
+  if (newStreak > currentStreak) {
+    newStreakPoints += 10;
+  }
+
+  const newTotalPoints =
+    (data.points?.gitRankPoints || 0) +
+    (data.points?.referralPoints || 0) +
+    (data.points?.codingVersePoints || 0) +
+    newStreakPoints;
+
+  const newLongestStreak = Math.max(data.longestStreak || 0, newStreak);
+
+  try {
+    await updateDoc(docRef, {
+      streak: newStreak,
+      longestStreak: newLongestStreak,
+      lastActiveDate: newLastActiveDate,
+      streakFreezes: newStreakFreezes,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      lastLogin: new Date().toISOString(),
+      "points.streakPoints": newStreakPoints,
+      "points.totalPoints": newTotalPoints
+    });
+    if (usedFreeze) {
+      console.log("🧊 Streak freeze used! Streak protected.");
     }
-    
-    const newTotalPoints = (data.points?.gitRankPoints || 0) + 
-                           (data.points?.referralPoints || 0) + 
-                           (data.points?.codingVersePoints || 0) + 
-                           newStreakPoints;
-                           
-    const newLongestStreak = Math.max(data.longestStreak || 0, newStreak);
-
-    try {
-      await updateDoc(docRef, {
-        streak: newStreak,
-        longestStreak: newLongestStreak,
-        lastLogin: now.toISOString(),
-        "points.streakPoints": newStreakPoints,
-        "points.totalPoints": newTotalPoints
-      });
-      console.log("Streak updated successfully. New Streak:", newStreak, "| Longest:", newLongestStreak);
-    } catch (err) {
-      console.error("Failed to update streak:", err);
-    }
+    console.log("Streak updated. New Streak:", newStreak, "| Longest:", newLongestStreak);
+  } catch (err) {
+    console.error("Failed to update streak:", err);
   }
 };
 
@@ -75,14 +73,9 @@ export const AuthProvider = ({ children }) => {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(auth ? true : false);
   const [isOnboarding, setIsOnboarding] = useState(false);
-  // GitHub OAuth access token stored only in memory, not persisted to storage
-  // Firebase Auth handles session persistence securely via HTTP-only cookies
   const [ghAccessToken, setGhAccessToken] = useState(null);
 
   useEffect(() => {
-    // If Firebase wasn't configured (app === null), `auth` will be null.
-    // Avoid calling `onAuthStateChanged` with a null auth instance which
-    // causes a runtime error in the browser bundle.
     if (!auth) {
       console.warn("Firebase auth is not initialized; auth listener skipped.");
       return undefined;
@@ -98,13 +91,9 @@ export const AuthProvider = ({ children }) => {
 
       if (currentUser) {
         setUser(currentUser);
-        // Token is only available during the current session in memory
-        // It will be null on page refresh, requiring fresh authentication
-        // This is the secure default behavior
 
         const userDocRef = doc(db, "users", currentUser.uid);
         
-        // Try to load from cache first to reduce initial load time
         const docPath = `users/${currentUser.uid}`;
         const cachedData = userDataCache.get(docPath);
         if (cachedData) {
@@ -113,22 +102,18 @@ export const AuthProvider = ({ children }) => {
           setLoading(false);
         }
 
-        // Subscribe to real-time updates with debouncing to reduce re-renders
         unsubscribeSnapshot = onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists()) {
             const data = docSnap.data();
 
-            // Update cache immediately for fast subsequent reads
             userDataCache.set(docPath, data);
 
-            // Debounce state updates to prevent excessive re-renders from rapid changes
             listenerOptimizer.debounce(currentUser.uid, (userData) => {
               setUserData(userData);
               setIsOnboarding(userData.onboardingStatus === "incomplete");
               setLoading(false);
             }, data);
 
-            // Update streak asynchronously
             checkAndUpdateStreak(data, userDocRef);
           } else {
             userDataCache.delete(docPath);
@@ -166,9 +151,6 @@ export const AuthProvider = ({ children }) => {
       const githubId = additionalInfo?.profile?.id || null;
       const avatar = additionalInfo?.profile?.avatar_url || authUser.photoURL || "";
 
-      // Store token only in memory for current session
-      // Firebase Auth handles persistent session via secure HTTP-only cookies
-      // Token is not persisted to localStorage or sessionStorage to prevent XSS theft
       setGhAccessToken(accessToken);
 
       const userDocRef = doc(db, "users", authUser.uid);
@@ -188,6 +170,9 @@ export const AuthProvider = ({ children }) => {
           streak: 0,
           longestStreak: 0,
           githubStreak: 0,
+          streakFreezes: 1,
+          lastActiveDate: null,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           lastLogin: new Date().toISOString(),
           createdAt: new Date().toISOString(),
           points: {
@@ -217,8 +202,6 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     setLoading(true);
     try {
-      // No need to remove from storage since token is only in memory
-      // Firebase Auth session will be cleared by signOutUser()
       await signOutUser();
       setUser(null);
       setUserData(null);
@@ -232,8 +215,6 @@ export const AuthProvider = ({ children }) => {
   };
 
   const fetchGitHubStats = async (uid, username) => {
-    // Validate GitHub username per GitHub's rules: 1-39 characters,
-    // alphanumeric + hyphens only, no leading/trailing hyphens.
     if (!username || typeof username !== "string") {
       throw new Error("GitHub username is required and must be a string.");
     }
@@ -247,10 +228,7 @@ export const AuthProvider = ({ children }) => {
       throw new Error("GitHub username can only contain letters, digits, and hyphens, and cannot start or end with a hyphen.");
     }
 
-    // URL-encode the username to prevent injection attacks, though axios should
-    // handle this automatically.
     const encodedUsername = encodeURIComponent(trimmedUsername);
-
     const token = ghAccessToken;
     const headers = token ? { Authorization: `token ${token}` } : {};
 
@@ -284,7 +262,7 @@ export const AuthProvider = ({ children }) => {
         const commitsRes = await axios.get(`https://api.github.com/search/commits?q=author:${encodedUsername}`, { headers });
         commits = commitsRes.data.total_count || 0;
       } catch (err) {
-        console.warn("Commits retrieval failed; score will be incomplete until next refresh:", err);
+        console.warn("Commits retrieval failed:", err);
         commits = 0;
       }
 
@@ -293,7 +271,7 @@ export const AuthProvider = ({ children }) => {
         const prsRes = await axios.get(`https://api.github.com/search/issues?q=author:${encodedUsername}+type:pr`, { headers });
         prs = prsRes.data.total_count || 0;
       } catch (err) {
-        console.warn("PRs retrieval failed; score will be incomplete until next refresh:", err);
+        console.warn("PRs retrieval failed:", err);
         prs = 0;
       }
 
@@ -302,17 +280,15 @@ export const AuthProvider = ({ children }) => {
         const reviewsRes = await axios.get(`https://api.github.com/search/issues?q=reviewed-by:${encodedUsername}`, { headers });
         reviews = reviewsRes.data.total_count || 0;
       } catch (err) {
-        console.warn("Reviews retrieval failed; score will be incomplete until next refresh:", err);
+        console.warn("Reviews retrieval failed:", err);
         reviews = 0;
       }
 
-      // --- NEW GITHUB LIVE STREAK CALCULATION LOGIC ---
       let githubStreak = 0;
       try {
         const eventsRes = await axios.get(`https://api.github.com/users/${username}/events?per_page=100`, { headers });
         const events = eventsRes.data;
         
-        // Extract unique dates of events (YYYY-MM-DD format)
         const eventDates = new Set(
           events
             .filter(e => e.created_at)
@@ -329,12 +305,10 @@ export const AuthProvider = ({ children }) => {
         let dateToCheck = new Date(today);
         
         if (eventDates.has(todayStr)) {
-          // Streak is active today
+          // active today
         } else if (eventDates.has(yesterdayStr)) {
-          // Streak was active yesterday, count from yesterday
           dateToCheck = yesterday;
         } else {
-          // No active streak
           dateToCheck = null;
         }
 
@@ -345,7 +319,7 @@ export const AuthProvider = ({ children }) => {
               githubStreak++;
               dateToCheck.setDate(dateToCheck.getDate() - 1);
             } else {
-              break; // Streak broken
+              break;
             }
           }
         }
@@ -353,7 +327,6 @@ export const AuthProvider = ({ children }) => {
         console.warn("GitHub events retrieval failed for streak:", err);
       }
 
-      // Add points for each day of the active GitHub streak (+10 XP per day)
       const gitRankPoints = (commits * 2) + (prs * 5) + (reviews * 10) + (githubStreak * 10);
 
       return {
@@ -405,7 +378,6 @@ export const AuthProvider = ({ children }) => {
       const ghStats = await fetchGitHubStats(user.uid, userData.githubUsername);
       const userRef = doc(db, "users", user.uid);
 
-      // Phase 1: Retrieve Live Data
       const userDoc = await getDoc(userRef);
       if (!userDoc.exists()) {
         throw new Error("User document does not exist in Firestore!");
@@ -419,7 +391,6 @@ export const AuthProvider = ({ children }) => {
       const newGitRankPoints = ghStats.gitRankPoints;
       const newTotalPoints = newGitRankPoints + currentReferralPoints + currentCodingVersePoints + currentStreakPoints;
 
-      // Phase 2: Issue Atomic Batch Write
       const batch = writeBatch(db);
       
       batch.update(userRef, {
@@ -430,15 +401,13 @@ export const AuthProvider = ({ children }) => {
         "githubStats.stars": ghStats.stars,
         "githubStats.followers": ghStats.followers,
         "githubStats.primaryLanguage": ghStats.primaryLanguage,
-        "githubStreak": ghStats.githubStreak, // Syncs live streak to Firestore
+        "githubStreak": ghStats.githubStreak,
         "points.gitRankPoints": newGitRankPoints,
         "points.totalPoints": newTotalPoints,
         "lastSync": serverTimestamp()
       });
 
-      // Execute atomic transaction
       await batch.commit();
-
       console.log("Background GitHub sync completed successfully via atomic batch.");
     } catch (error) {
       console.error("Background GitHub sync failed:", error);
@@ -446,7 +415,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-<AuthContext.Provider value={{ user, userData, loading, isOnboarding, login, logout, fetchGitHubStats, syncGitHubData, ghAccessToken, setUserData }}>
+    <AuthContext.Provider value={{ user, userData, loading, isOnboarding, login, logout, fetchGitHubStats, syncGitHubData, ghAccessToken, setUserData }}>
       {children}
     </AuthContext.Provider>
   );
