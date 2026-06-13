@@ -381,7 +381,10 @@ export const AuthProvider = ({ children }) => {
       const { data: profileData, rateLimitError: profileRateLimit } = await githubFetch(() =>
         axios.get(`https://api.github.com/users/${encodedUsername}`, { headers })
       );
-      if (profileRateLimit) throw new Error(profileRateLimit);
+      if (profileRateLimit) {
+        const profileRateLimitError = new Error(profileRateLimit);
+        throw new Error(profileRateLimit, { cause: profileRateLimitError });
+      }
       const publicRepos = profileData.public_repos || 0;
       const followers = profileData.followers || 0;
 
@@ -481,7 +484,7 @@ export const AuthProvider = ({ children }) => {
       const rateLimitMsg = getRateLimitMessage(error);
       if (rateLimitMsg) {
         console.warn("Rate limit hit:", rateLimitMsg);
-        throw new Error(rateLimitMsg);
+        throw new Error(rateLimitMsg, { cause: error });
       }
       console.error("Error executing GitHub stats fetcher snapshot:", error);
       return { commits: 0, prs: 0, reviews: 0, publicRepos: 0, stars: 0, followers: 0, primaryLanguage: "JavaScript", githubStreak: 0, gitRankPoints: 0 };
@@ -538,7 +541,7 @@ export const AuthProvider = ({ children }) => {
       const rateLimitMsg = getRateLimitMessage(error);
       if (rateLimitMsg) {
         console.warn("Sync blocked by rate limit:", rateLimitMsg);
-        throw new Error(rateLimitMsg);
+        throw new Error(rateLimitMsg, { cause: error });
       }
       console.error("Background GitHub sync failed:", error);
     }
