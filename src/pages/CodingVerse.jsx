@@ -848,7 +848,9 @@ export const CodingVerse = () => {
               Given two strings <code className="bg-slate-200/50 dark:bg-slate-800/80 px-1.5 py-0.5 rounded text-xs">word1</code> and <code className="bg-slate-200/50 dark:bg-slate-800/80 px-1.5 py-0.5 rounded text-xs">word2</code>, return the minimum number of operations required to convert <code className="bg-slate-200/50 dark:bg-slate-800/80 px-1.5 py-0.5 rounded text-xs">word1</code> to <code className="bg-slate-200/50 dark:bg-slate-800/80 px-1.5 py-0.5 rounded text-xs">word2</code>.
             </p>
             <div className="flex items-center gap-4 text-xs font-bold text-slate-500 pt-2">
-              <span>Difficulty: <span className="text-red-500">Hard (80 XP)</span></span>
+              <span className="px-2.5 py-0.5 text-[9px] font-bold rounded-full border text-red-500 bg-red-500/10 border-red-500/25">
+                Hard (80 XP)
+              </span>
               <span>•</span>
               <span>Target Time: 45 mins</span>
             </div>
