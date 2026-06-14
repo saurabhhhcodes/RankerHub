@@ -1,16 +1,15 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Github } from "../ui/Icons";
-import { useTheme } from "../../hooks/useTheme";
+import ThemeToggle from "../ui/ThemeToggle";
 import { Menu, X } from "lucide-react";
 import logo from "../../assets/logo.png";
 
 const getInitialIndex = (location) => {
   const path = location.pathname;
   const hash = location.hash;
-  const search = location.search;
 
-  if (search.includes("modal=how-it-works")) return 2;
+  if (hash === "#how-it-works") return 2;
   if (hash === "#features") return 1;
   if (path === "/about") return 3;
   return 0; // Default to Home
@@ -19,10 +18,17 @@ const getInitialIndex = (location) => {
 export const PublicNavbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { toggleTheme } = useTheme();
 
-  const activeIndex = getInitialIndex(location);
+  // Compute activeIndex from location, but allow scroll observer to override
+  const locationBasedIndex = useMemo(() => getInitialIndex(location), [location]);
+  const [scrollBasedIndex, setScrollBasedIndex] = useState(null);
+  
+  // Use scroll-based index if available, otherwise use location-based
+  const activeIndex = scrollBasedIndex !== null ? scrollBasedIndex : locationBasedIndex;
+  
   const [mobileExpanded, setMobileExpanded] = useState(false);
+  const isScrollingRef = useRef(false);
+  const prevPathnameRef = useRef(location.pathname);
 
   const buttonRefs = useRef([]);
   const activePillRef = useRef(null);
@@ -48,12 +54,68 @@ export const PublicNavbar = () => {
 
   // Recalculate pill on activeIndex change
   useEffect(() => {
+    // Reset scroll-based tracking when leaving home page
+    if (prevPathnameRef.current === "/" && location.pathname !== "/") {
+      setScrollBasedIndex(null);
+    }
+    prevPathnameRef.current = location.pathname;
+
     // Small timeout to allow layout stability (fonts, etc.)
     const timer = setTimeout(() => {
       updatePill(activeIndex, true);
     }, 50);
     return () => clearTimeout(timer);
-  }, [activeIndex]);
+  }, [activeIndex, location.pathname]);
+
+  // Intersection Observer to track visible sections on scroll
+  useEffect(() => {
+    // Only observe on home page
+    if (location.pathname !== "/") return;
+
+    const sections = [
+      { id: "features", index: 1 },
+      { id: "how-it-works", index: 2 },
+    ];
+
+    const observerOptions = {
+      root: null,
+      rootMargin: "-20% 0px -60% 0px", // Trigger when section is in upper portion of viewport
+      threshold: 0,
+    };
+
+    const observerCallback = (entries) => {
+      // Only update if not programmatically scrolling
+      if (isScrollingRef.current) return;
+
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const section = sections.find((s) => s.id === entry.target.id);
+          if (section) {
+            setScrollBasedIndex(section.index);
+            // Update URL hash without triggering navigation
+            window.history.replaceState(null, null, `#${section.id}`);
+          }
+        }
+      });
+
+      // Handle when scrolled to top (no sections intersecting)
+      const anyIntersecting = entries.some((entry) => entry.isIntersecting);
+      if (!anyIntersecting && window.scrollY < 100) {
+        setScrollBasedIndex(0);
+        window.history.replaceState(null, null, "/");
+      }
+    };
+
+    const observer = new IntersectionObserver(observerCallback, observerOptions);
+
+    // Observe all sections
+    sections.forEach(({ id }) => {
+      const element = document.getElementById(id);
+      if (element) observer.observe(element);
+    });
+
+    return () => observer.disconnect();
+  }, [location.pathname]);
 
   // Handle window resizing
   useEffect(() => {
@@ -85,7 +147,15 @@ export const PublicNavbar = () => {
   const handleScrollToSection = (elementId) => {
     const element = document.getElementById(elementId);
     if (element) {
+      // Set flag to prevent intersection observer from interfering
+      isScrollingRef.current = true;
+      
       element.scrollIntoView({ behavior: "smooth" });
+      
+      // Clear flag after scroll completes
+      setTimeout(() => {
+        isScrollingRef.current = false;
+      }, 1000);
     }
   };
 
@@ -94,6 +164,11 @@ export const PublicNavbar = () => {
 
     if (item.hash) {
       if (location.pathname === "/") {
+        // Update URL hash first
+        window.history.pushState(null, null, `#${item.hash}`);
+        // Update scroll-based index
+        setScrollBasedIndex(index);
+        // Then scroll
         handleScrollToSection(item.hash);
       } else {
         navigate(`/#${item.hash}`);
@@ -102,6 +177,9 @@ export const PublicNavbar = () => {
       navigate(item.path);
     } else if (item.path === "/") {
       if (location.pathname === "/") {
+        // Clear hash and scroll to top
+        window.history.pushState(null, null, "/");
+        setScrollBasedIndex(0);
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
         navigate("/");
@@ -114,7 +192,7 @@ export const PublicNavbar = () => {
   const navItems = [
     { label: "Home", path: "/" },
     { label: "Features", path: "/", hash: "features" },
-    { label: "How it Works", path: "?modal=how-it-works", modal: true },
+    { label: "How it Works", path: "/", hash: "how-it-works" },
     { label: "About Us", path: "/about" },
   ];
 
@@ -178,46 +256,7 @@ export const PublicNavbar = () => {
               <Github className="w-5 h-5" />
             </a>
 
-            <button
-              className="theme-btn"
-              onClick={toggleTheme}
-              aria-label="Dark Mode Toggle"
-            >
-              <div className="theme-icon-wrapper">
-                <svg
-                  className="sun"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="5"></circle>
-                  <line x1="12" y1="1" x2="12" y2="3"></line>
-                  <line x1="12" y1="21" x2="12" y2="23"></line>
-                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                  <line x1="1" y1="12" x2="3" y2="12"></line>
-                  <line x1="21" y1="12" x2="23" y2="12"></line>
-                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-                </svg>
-                <svg
-                  className="moon"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                </svg>
-              </div>
-            </button>
+            <ThemeToggle className="!w-9 !h-9" />
 
             <Link to="/login" className="nav-static-btn">
               Sign In
@@ -247,46 +286,7 @@ export const PublicNavbar = () => {
 
             <div className="flex items-center gap-1">
               {/* Theme Toggle always accessible */}
-              <button
-                className="theme-btn"
-                onClick={toggleTheme}
-                aria-label="Dark Mode Toggle"
-              >
-                <div className="theme-icon-wrapper">
-                  <svg
-                    className="sun"
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <circle cx="12" cy="12" r="5"></circle>
-                    <line x1="12" y1="1" x2="12" y2="3"></line>
-                    <line x1="12" y1="21" x2="12" y2="23"></line>
-                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                    <line x1="1" y1="12" x2="3" y2="12"></line>
-                    <line x1="21" y1="12" x2="23" y2="12"></line>
-                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-                  </svg>
-                  <svg
-                    className="moon"
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                  </svg>
-                </div>
-              </button>
+            <ThemeToggle className="!w-9 !h-9" />
 
               {/* Hamburger Button */}
               <button

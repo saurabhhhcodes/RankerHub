@@ -3,11 +3,13 @@ export const sidebarLinks = [
   { label: "CodingVerse", path: "/dashboard/codingverse", icon: "Code2" },
   { label: "GitRank", path: "/dashboard/gitrank", icon: "Github" },
   { label: "CodingOwl", path: "/dashboard/codingowl", icon: "BookOpen" },
+  { label: "OS Matchmaker", path: "/dashboard/matchmaker", icon: "Search" },
   { label: "RankHer", path: "/dashboard/rankher", icon: "Sparkles" },
   { label: "Achievements", path: "/dashboard/achievements", icon: "Award" },
   { label: "Friends", path: "/dashboard/friends", icon: "UsersRound" },
   { label: "Profile", path: "/dashboard/profile", icon: "User" },
   { label: "Settings", path: "/dashboard/settings", icon: "Settings" },
+  { label: "Repo Auditor", path: "/dashboard/auditor", icon: "Activity" },
   { label: "How it works", path: "?modal=how-it-works", icon: "HelpCircle" },
   { label: "About Us", path: "/about", icon: "Info" }
 ];
@@ -45,5 +47,6 @@ export const systemBadges = [
   { id: "b1", name: "Pioneer", description: "First 100 users", color: "from-amber-500 to-orange-500" },
   { id: "b2", name: "Code Warrior", description: "100+ contributions", color: "from-blue-500 to-indigo-500" },
   { id: "b3", name: "Streak Master", description: "10+ day streak", color: "from-red-500 to-pink-500" },
-  { id: "b4", name: "CSS Sorceress", description: "UI layout designer", color: "from-purple-500 to-violet-500" }
+  { id: "b4", name: "CSS Sorceress", description: "UI layout designer", color: "from-purple-500 to-violet-500" },
+  { id: "b5", name: "Ranker Ambassador", description: "10+ successful referrals", color: "from-emerald-500 to-teal-500" }
 ];
