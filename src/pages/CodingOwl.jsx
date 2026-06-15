@@ -290,3 +290,4 @@ export const CodingOwl = () => {
 };
 
 export default CodingOwl;
+// upadted the reset timer function to include animation and ensure the timer stops immediately when reset is clicked.
