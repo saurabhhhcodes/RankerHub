@@ -21,6 +21,7 @@ import axios from "axios";
 import { auth, db, signInWithGitHub, signOutUser } from "../lib/firebase";
 import { validateUserData } from "../utils/inputValidation";
 import { userDataCache, listenerOptimizer } from "../utils/firestoreOptimization";
+import { calculateTrustScore } from "../services/trustScoreService";
 
 const AuthContext = createContext({});
 
@@ -68,10 +69,11 @@ const checkAndUpdateStreak = async (data, docRef) => {
         newStreak = 1;
       }
 
-      const newTotalPoints = (latestData.points?.gitRankPoints || 0) +
-                             (latestData.points?.referralPoints || 0) +
-                             (latestData.points?.codingVersePoints || 0) +
-                             newStreakPoints;
+      const newTotalPoints =
+        (latestData.points?.gitRankPoints || 0) +
+        (latestData.points?.referralPoints || 0) +
+        (latestData.points?.codingVersePoints || 0) +
+        newStreakPoints;
 
       const newLongestStreak = Math.max(latestData.longestStreak || 0, newStreak);
 
@@ -145,15 +147,18 @@ export const AuthProvider = ({ children }) => {
                 streakPoints: 0,
                 referralPoints: 0,
                 auditorPoints: 0,
+                trustScore: 50,
                 totalPoints: 0
               },
               lastAuditReward: null
             };
             await setDoc(userDocRef, skeletalUser);
           } else {
-            await setDoc(userDocRef, {
-              lastLogin: new Date().toISOString(),
-            }, { merge: true });
+            await setDoc(
+              userDocRef,
+              { lastLogin: new Date().toISOString() },
+              { merge: true }
+            );
           }
         }
       })
@@ -180,31 +185,42 @@ export const AuthProvider = ({ children }) => {
           setLoading(false);
         }
 
-        unsubscribeSnapshot = onSnapshot(userDocRef, (docSnap) => {
-          if (docSnap.exists()) {
-            const data = docSnap.data();
+        unsubscribeSnapshot = onSnapshot(
+          userDocRef,
+          (docSnap) => {
+            if (docSnap.exists()) {
+              const data = docSnap.data();
 
-            userDataCache.set(docPath, data);
+              userDataCache.set(docPath, data);
 
-            listenerOptimizer.debounce(currentUser.uid, (userData) => {
-              setUserData(userData);
-              setIsOnboarding(userData.onboardingStatus === "incomplete");
-              setLoading(false);
-            }, data);
+              listenerOptimizer.debounce(
+                currentUser.uid,
+                (userData) => {
+                  setUserData(userData);
+                  setIsOnboarding(userData.onboardingStatus === "incomplete");
+                  setLoading(false);
+                },
+                data
+              );
 
-            checkAndUpdateStreak(data, userDocRef);
-          } else {
-            userDataCache.delete(docPath);
-            listenerOptimizer.debounce(currentUser.uid, () => {
-              setUserData(null);
-              setIsOnboarding(true);
-              setLoading(false);
-            }, null);
+              checkAndUpdateStreak(data, userDocRef);
+            } else {
+              userDataCache.delete(docPath);
+              listenerOptimizer.debounce(
+                currentUser.uid,
+                () => {
+                  setUserData(null);
+                  setIsOnboarding(true);
+                  setLoading(false);
+                },
+                null
+              );
+            }
+          },
+          (_error) => {
+            setLoading(false);
           }
-        }, (_error) => {
-          setLoading(false);
-        });
-
+        );
       } else {
         setUser(null);
         setUserData(null);
@@ -273,6 +289,7 @@ export const AuthProvider = ({ children }) => {
             streakPoints: 10,
             referralPoints: 0,
             auditorPoints: 0,
+            trustScore: 50,
             totalPoints: 10
           },
           hubCoins: 500,
@@ -282,10 +299,14 @@ export const AuthProvider = ({ children }) => {
         };
         await setDoc(userDocRef, skeletalUser);
       } else {
-        await setDoc(userDocRef, {
-          lastLogin: today.toISOString(),
-          ...(requestRepoScope && { privateRepoSyncEnabled: true })
-        }, { merge: true });
+        await setDoc(
+          userDocRef,
+          {
+            lastLogin: today.toISOString(),
+            ...(requestRepoScope && { privateRepoSyncEnabled: true })
+          },
+          { merge: true }
+        );
       }
 
       return authUser;
@@ -370,7 +391,9 @@ export const AuthProvider = ({ children }) => {
     }
 
     if (!/^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$/.test(trimmedUsername)) {
-      throw new Error("GitHub username can only contain letters, digits, and hyphens, and cannot start or end with a hyphen.");
+      throw new Error(
+        "GitHub username can only contain letters, digits, and hyphens, and cannot start or end with a hyphen."
+      );
     }
 
     const encodedUsername = encodeURIComponent(trimmedUsername);
@@ -382,25 +405,31 @@ export const AuthProvider = ({ children }) => {
         axios.get(`https://api.github.com/users/${encodedUsername}`, { headers })
       );
       if (profileRateLimit) {
-        const profileRateLimitError = new Error(profileRateLimit);
-        throw new Error(profileRateLimit, { cause: profileRateLimitError });
+        throw new Error(profileRateLimit);
       }
       const publicRepos = profileData.public_repos || 0;
       const followers = profileData.followers || 0;
 
       let stars = 0;
       let primaryLanguage = "JavaScript";
+      let reposList = [];
       try {
         const { data: reposData, rateLimitError: reposRateLimit } = await githubFetch(() =>
-          axios.get(`https://api.github.com/users/${encodedUsername}/repos?per_page=100&type=owner`, { headers })
+          axios.get(
+            `https://api.github.com/users/${encodedUsername}/repos?per_page=100&type=owner`,
+            { headers }
+          )
         );
         if (!reposRateLimit && reposData) {
+          reposList = reposData;
           stars = reposData.reduce((sum, r) => sum + (r.stargazers_count || 0), 0);
           const langCounts = {};
-          reposData.forEach(r => {
+          reposData.forEach((r) => {
             if (r.language) langCounts[r.language] = (langCounts[r.language] || 0) + 1;
           });
-          const sortedLangs = Object.keys(langCounts).sort((a, b) => langCounts[b] - langCounts[a]);
+          const sortedLangs = Object.keys(langCounts).sort(
+            (a, b) => langCounts[b] - langCounts[a]
+          );
           if (sortedLangs.length > 0) primaryLanguage = sortedLangs[0];
         }
       } catch (err) {
@@ -410,7 +439,10 @@ export const AuthProvider = ({ children }) => {
       let commits = 0;
       try {
         const { data: commitsData, rateLimitError: commitsRateLimit } = await githubFetch(() =>
-          axios.get(`https://api.github.com/search/commits?q=author:${encodedUsername}`, { headers })
+          axios.get(
+            `https://api.github.com/search/commits?q=author:${encodedUsername}`,
+            { headers }
+          )
         );
         if (commitsRateLimit) console.warn(commitsRateLimit);
         else commits = commitsData?.total_count || 0;
@@ -421,7 +453,10 @@ export const AuthProvider = ({ children }) => {
       let prs = 0;
       try {
         const { data: prsData, rateLimitError: prsRateLimit } = await githubFetch(() =>
-          axios.get(`https://api.github.com/search/issues?q=author:${encodedUsername}+type:pr`, { headers })
+          axios.get(
+            `https://api.github.com/search/issues?q=author:${encodedUsername}+type:pr`,
+            { headers }
+          )
         );
         if (prsRateLimit) console.warn(prsRateLimit);
         else prs = prsData?.total_count || 0;
@@ -429,10 +464,28 @@ export const AuthProvider = ({ children }) => {
         console.warn("PRs retrieval failed:", err);
       }
 
+      let mergedPrsCount = 0;
+      try {
+        const mergedPrsRes = await axios.get(
+          `https://api.github.com/search/issues?q=author:${encodedUsername}+type:pr+is:merged`,
+          { headers }
+        );
+        mergedPrsCount = mergedPrsRes.data.total_count || 0;
+      } catch (err) {
+        console.warn(
+          "Merged PRs retrieval failed; score will be incomplete until next refresh:",
+          err
+        );
+        mergedPrsCount = 0;
+      }
+
       let reviews = 0;
       try {
         const { data: reviewsData, rateLimitError: reviewsRateLimit } = await githubFetch(() =>
-          axios.get(`https://api.github.com/search/issues?q=reviewed-by:${encodedUsername}`, { headers })
+          axios.get(
+            `https://api.github.com/search/issues?q=reviewed-by:${encodedUsername}`,
+            { headers }
+          )
         );
         if (reviewsRateLimit) console.warn(reviewsRateLimit);
         else reviews = reviewsData?.total_count || 0;
@@ -440,46 +493,103 @@ export const AuthProvider = ({ children }) => {
         console.warn("Reviews retrieval failed:", err);
       }
 
+      // --- Streak calculation ---
       let githubStreak = 0;
+      let eventsList = [];
+
       try {
-        const { data: eventsData, rateLimitError: eventsRateLimit } = await githubFetch(() =>
-          axios.get(`https://api.github.com/users/${username}/events?per_page=100`, { headers })
-        );
-        if (!eventsRateLimit && eventsData) {
-          const eventDates = new Set(
-            eventsData.filter(e => e.created_at).map(e => e.created_at.split('T')[0])
-          );
-          const today = new Date();
-          const todayStr = today.toISOString().split('T')[0];
-          const yesterday = new Date(today);
-          yesterday.setDate(yesterday.getDate() - 1);
-          const yesterdayStr = yesterday.toISOString().split('T')[0];
-          let dateToCheck = new Date(today);
-          if (eventDates.has(todayStr)) {
-            // active today
-          } else if (eventDates.has(yesterdayStr)) {
-            dateToCheck = yesterday;
-          } else {
-            dateToCheck = null;
+        const today = new Date();
+        const todayStr = today.toISOString().split("T")[0];
+
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split("T")[0];
+
+        const eventDates = new Set();
+
+        let eventsUrl = `https://api.github.com/users/${encodedUsername}/events?per_page=100`;
+        let firstPageLoaded = false;
+
+        while (eventsUrl) {
+          const eventsRes = await axios.get(eventsUrl, { headers });
+          const events = eventsRes.data || [];
+
+          if (!firstPageLoaded) {
+            eventsList = events;
+            firstPageLoaded = true;
           }
-          if (dateToCheck) {
-            while (true) {
-              const checkStr = dateToCheck.toISOString().split('T')[0];
-              if (eventDates.has(checkStr)) {
-                githubStreak++;
-                dateToCheck.setDate(dateToCheck.getDate() - 1);
-              } else break;
+
+          const linkHeader = eventsRes.headers?.link || eventsRes.headers?.Link;
+          eventsUrl = linkHeader?.match(/<([^>]+)>;\s*rel="next"/)?.[1] || null;
+
+          if (!events.length) break;
+
+          let oldestEventDateStr = null;
+          events.forEach((e) => {
+            if (e.created_at) {
+              const dateStr = e.created_at.split("T")[0];
+              eventDates.add(dateStr);
+              oldestEventDateStr = dateStr;
+            }
+          });
+
+          if (oldestEventDateStr && oldestEventDateStr < yesterdayStr) break;
+        }
+
+        let dateToCheck = new Date(today);
+        if (eventDates.has(todayStr)) {
+          // active today — start streak from today
+        } else if (eventDates.has(yesterdayStr)) {
+          dateToCheck = new Date(yesterday);
+        } else {
+          dateToCheck = null;
+        }
+
+        if (dateToCheck) {
+          while (true) {
+            const checkStr = dateToCheck.toISOString().split("T")[0];
+            if (eventDates.has(checkStr)) {
+              githubStreak++;
+              dateToCheck.setDate(dateToCheck.getDate() - 1);
+            } else {
+              break;
             }
           }
         }
       } catch (err) {
         console.warn("GitHub events retrieval failed for streak:", err);
       }
+      // --- End streak calculation ---
 
-      const gitRankPoints = (commits * 2) + (prs * 5) + (reviews * 10) + (githubStreak * 10);
+      const gitRankPoints =
+        commits * 2 + prs * 5 + reviews * 10 + githubStreak * 10;
 
-      return { commits, prs, reviews, publicRepos, stars, followers, primaryLanguage, githubStreak, gitRankPoints };
+      let trustScore = 50;
+      try {
+        const trustBreakdown = calculateTrustScore(
+          trimmedUsername,
+          { commits, prs, reviews, publicRepos, stars, followers },
+          eventsList,
+          reposList,
+          mergedPrsCount
+        );
+        trustScore = trustBreakdown.totalScore;
+      } catch (err) {
+        console.warn("Trust score calculation error:", err);
+      }
 
+      return {
+        commits,
+        prs,
+        reviews,
+        publicRepos,
+        stars,
+        followers,
+        primaryLanguage,
+        githubStreak,
+        gitRankPoints,
+        trustScore
+      };
     } catch (error) {
       const rateLimitMsg = getRateLimitMessage(error);
       if (rateLimitMsg) {
@@ -487,7 +597,17 @@ export const AuthProvider = ({ children }) => {
         throw new Error(rateLimitMsg, { cause: error });
       }
       console.error("Error executing GitHub stats fetcher snapshot:", error);
-      return { commits: 0, prs: 0, reviews: 0, publicRepos: 0, stars: 0, followers: 0, primaryLanguage: "JavaScript", githubStreak: 0, gitRankPoints: 0 };
+      return {
+        commits: 0,
+        prs: 0,
+        reviews: 0,
+        publicRepos: 0,
+        stars: 0,
+        followers: 0,
+        primaryLanguage: "JavaScript",
+        githubStreak: 0,
+        gitRankPoints: 0
+      };
     }
   };
 
@@ -519,7 +639,11 @@ export const AuthProvider = ({ children }) => {
       const currentStreakPoints = liveData.points?.streakPoints || 0;
 
       const newGitRankPoints = ghStats.gitRankPoints;
-      const newTotalPoints = newGitRankPoints + currentReferralPoints + currentCodingVersePoints + currentStreakPoints;
+      const newTotalPoints =
+        newGitRankPoints +
+        currentReferralPoints +
+        currentCodingVersePoints +
+        currentStreakPoints;
 
       const batch = writeBatch(db);
       batch.update(userRef, {
@@ -530,10 +654,11 @@ export const AuthProvider = ({ children }) => {
         "githubStats.stars": ghStats.stars,
         "githubStats.followers": ghStats.followers,
         "githubStats.primaryLanguage": ghStats.primaryLanguage,
-        "githubStreak": ghStats.githubStreak,
+        githubStreak: ghStats.githubStreak,
         "points.gitRankPoints": newGitRankPoints,
         "points.totalPoints": newTotalPoints,
-        "lastSync": serverTimestamp()
+        "points.trustScore": ghStats.trustScore,
+        lastSync: serverTimestamp()
       });
 
       await batch.commit();
@@ -548,7 +673,22 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, userData, loading, isOnboarding, login, logout, fetchGitHubStats, syncGitHubData, ghAccessToken, setUserData, purchaseMascot, equipMascot }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        userData,
+        loading,
+        isOnboarding,
+        login,
+        logout,
+        fetchGitHubStats,
+        syncGitHubData,
+        ghAccessToken,
+        setUserData,
+        purchaseMascot,
+        equipMascot
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
