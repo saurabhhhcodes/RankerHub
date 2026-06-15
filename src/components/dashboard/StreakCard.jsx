@@ -50,11 +50,16 @@ export const StreakCard = () => {
       if (dayDateStr === todayStr) {
         status = loggedInToday ? "completed" : "current";
       } else if (dayDate < now) {
+<<<<<<< HEAD
         // Past day — infer completion from active streak length
         const dayMs = Date.parse(`${dayDateStr}T12:00:00Z`);
         const todayMs = Date.parse(`${todayStr}T12:00:00Z`);
         const diffDays = Math.round((todayMs - dayMs) / (1000 * 60 * 60 * 24));
         const maxCompletedDiff = loggedInToday ? activeStreak - 1 : activeStreak;
+=======
+        // Past day
+        const maxCompletedDiff = Math.max(0, loggedInToday ? activeStreak - 1 : activeStreak);
+>>>>>>> main
         if (diffDays >= 0 && diffDays <= maxCompletedDiff) {
           status = "completed";
         }
