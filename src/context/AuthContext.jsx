@@ -190,7 +190,11 @@ export const AuthProvider = ({ children }) => {
 
       if (currentUser) {
         setUser(currentUser);
-
+        // Confirm the restored token actually belongs to this user
+        const storedToken = sessionStorage.getItem(`gh_token_${currentUser.uid}`);
+        if (storedToken) {
+          setGhAccessToken(storedToken);  // always restore for the correct user
+        }
         const userDocRef = doc(db, "users", currentUser.uid);
 
         const docPath = `users/${currentUser.uid}`;
@@ -337,9 +341,9 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     try {
       await signOutUser();
-      if (user?.uid) {
-        sessionStorage.removeItem(`gh_token_${user.uid}`);
-      }
+      Object.keys(sessionStorage)
+        .filter(k => k.startsWith("gh_token_"))
+        .forEach(k => sessionStorage.removeItem(k));
       setUser(null);
       setUserData(null);
       setIsOnboarding(false);
