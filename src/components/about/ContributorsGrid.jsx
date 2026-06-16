@@ -29,6 +29,236 @@ const getRankBadge = (rank) => {
   return null;
 };
 
+// Leaderboard Modal - Moved outside
+const LeaderboardModal = ({ 
+  showLeaderboard, 
+  setShowLeaderboard, 
+  sortedContributors, 
+  expandedUser, 
+  setExpandedUser, 
+  sortBy, 
+  setSortBy 
+}) => {
+  if (!showLeaderboard) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      onClick={() => {
+        setShowLeaderboard(false);
+        setExpandedUser(null);
+      }}
+    >
+      <motion.div
+        initial={{ scale: 0.9, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.9, y: 20 }}
+        className="relative w-full max-w-4xl max-h-[90vh] bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/50 dark:border-slate-800/50 shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="sticky top-0 z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/50 p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Trophy className="w-6 h-6 text-yellow-500" />
+              <div>
+                <h2 className="text-xl font-black text-slate-900 dark:text-white">Leaderboard</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Top {sortedContributors.length} contributors ranked by points
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <select
+                value={sortBy}
+                onChange={(e) => {
+                  setSortBy(e.target.value);
+                  setExpandedUser(null);
+                }}
+                className="text-xs px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-violet-500"
+              >
+                <option value="rank">Sort by Rank</option>
+                <option value="points">Sort by Points</option>
+                <option value="contributions">Sort by Contributions</option>
+              </select>
+              <button
+                onClick={() => {
+                  setShowLeaderboard(false);
+                  setExpandedUser(null);
+                }}
+                className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <X className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Leaderboard Content */}
+        <div className="overflow-y-auto max-h-[calc(90vh-120px)] p-6 bg-white dark:bg-slate-900">
+          <div className="space-y-2">
+            {sortedContributors.map((contrib, idx) => {
+              const rank = idx + 1;
+              const isExpanded = expandedUser === contrib.id;
+              const isTop3 = rank <= 3;
+              
+              return (
+                <div
+                  key={contrib.id}
+                  className={`group rounded-xl border-2 ${
+                    isTop3 ? 
+                      rank === 1 ? 'border-yellow-400/50 bg-yellow-500/5' :
+                      rank === 2 ? 'border-gray-300/50 bg-gray-300/5' :
+                      'border-amber-600/50 bg-amber-600/5'
+                    : 'border-slate-200/50 dark:border-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/20'
+                  } ${
+                    isExpanded ? 'border-violet-500/50 bg-violet-500/5' : ''
+                  } transition-all duration-300`}
+                >
+                  <button
+                    onClick={() => setExpandedUser(isExpanded ? null : contrib.id)}
+                    className="w-full px-4 py-3 flex items-center gap-3 text-left"
+                  >
+                    {/* Rank with badge for top 3 */}
+                    <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                      {isTop3 ? (
+                        <div className="relative">
+                          {getRankBadge(rank)}
+                          <span className="sr-only">Rank {rank}</span>
+                        </div>
+                      ) : (
+                        <span className="text-xs font-bold text-slate-400">#{rank}</span>
+                      )}
+                    </div>
+
+                    {/* Avatar - Click to open GitHub */}
+                    <a
+                      href={contrib.html_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-shrink-0"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <img
+                        src={contrib.avatar_url}
+                        alt={contrib.login}
+                        className={`w-10 h-10 rounded-full border-2 ${
+                          isTop3 ? 'border-yellow-400/50' : 'border-slate-200 dark:border-slate-700'
+                        } hover:opacity-80 transition-opacity cursor-pointer`}
+                        crossOrigin="anonymous"
+                      />
+                    </a>
+
+                    {/* Name & Details - Click to open GitHub */}
+                    <div className="flex-1 min-w-0">
+                      <a
+                        href={contrib.html_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 flex-wrap hover:underline"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <p className="font-bold text-sm text-slate-900 dark:text-white whitespace-nowrap">
+                          {contrib.login}
+                        </p>
+                        {isTop3 && (
+                          <span className={`text-[10px] font-black ${
+                            rank === 1 ? 'text-yellow-500' :
+                            rank === 2 ? 'text-gray-400' :
+                            'text-amber-600'
+                          }`}>
+                            ★ TOP {rank}
+                          </span>
+                        )}
+                      </a>
+                      <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
+                        <span className="flex items-center gap-1 whitespace-nowrap">
+                          <GitCommit className="w-3 h-3" />
+                          {contrib.commits} commits
+                        </span>
+                        <span className="flex items-center gap-1 whitespace-nowrap">
+                          <GitPullRequest className="w-3 h-3" />
+                          {contrib.closedPrs} closed PRs
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Points & Expand */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className="text-right">
+                        <p className={`font-bold text-sm ${
+                          isTop3 ? 'text-yellow-500' : 'text-violet-600 dark:text-violet-400'
+                        }`}>
+                          {contrib.points} pts
+                        </p>
+                      </div>
+                      {isExpanded ? (
+                        <ChevronUp className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                      )}
+                    </div>
+                  </button>
+
+                  {/* Expanded Details */}
+                  <AnimatePresence>
+                    {isExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="px-4 pb-4 pt-0 border-t border-slate-200/50 dark:border-slate-800/50">
+                          <div className="grid grid-cols-3 gap-3 mt-3">
+                            <div className="p-3 rounded-xl bg-slate-100/50 dark:bg-slate-800/30 text-center">
+                              <p className="text-xs text-slate-500 dark:text-slate-400">Total Points</p>
+                              <p className="text-lg font-bold text-violet-600 dark:text-violet-400">
+                                {contrib.points}
+                              </p>
+                            </div>
+                            <div className="p-3 rounded-xl bg-slate-100/50 dark:bg-slate-800/30 text-center">
+                              <p className="text-xs text-slate-500 dark:text-slate-400">Commits</p>
+                              <p className="text-lg font-bold text-slate-900 dark:text-white">
+                                {contrib.commits}
+                              </p>
+                            </div>
+                            <div className="p-3 rounded-xl bg-slate-100/50 dark:bg-slate-800/30 text-center">
+                              <p className="text-xs text-slate-500 dark:text-slate-400">Closed PRs</p>
+                              <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                                {contrib.closedPrs}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="mt-3 flex justify-center">
+                            <a
+                              href={contrib.html_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-violet-600 dark:text-violet-400 hover:underline font-medium flex items-center gap-1"
+                            >
+                              <Star className="w-3 h-3" />
+                              View GitHub Profile
+                            </a>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
+
 export const ContributorsGrid = ({ fadeInUp, staggerContainer }) => {
   const [contributors, setContributors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +281,7 @@ export const ContributorsGrid = ({ fadeInUp, staggerContainer }) => {
           const login = (contrib.login || "").toLowerCase();
           return login !== "indresh404" && 
                  !login.includes("dependabot") && 
-                 login !== "divyaa404";
+                 login !== "divyagsharma2006-blip";
         });
         
         const sorted = filtered.sort((a, b) => b.contributions - a.contributions);
@@ -140,228 +370,6 @@ export const ContributorsGrid = ({ fadeInUp, staggerContainer }) => {
     );
   }
 
-  // Leaderboard Modal
-  const LeaderboardModal = () => {
-    if (!showLeaderboard) return null;
-
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-        onClick={() => {
-          setShowLeaderboard(false);
-          setExpandedUser(null);
-        }}
-      >
-        <motion.div
-          initial={{ scale: 0.9, y: 20 }}
-          animate={{ scale: 1, y: 0 }}
-          exit={{ scale: 0.9, y: 20 }}
-          className="relative w-full max-w-4xl max-h-[90vh] bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/50 dark:border-slate-800/50 shadow-2xl overflow-hidden"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Header */}
-          <div className="sticky top-0 z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/50 p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Trophy className="w-6 h-6 text-yellow-500" />
-                <div>
-                  <h2 className="text-xl font-black text-slate-900 dark:text-white">Leaderboard</h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Top {sortedContributors.length} contributors ranked by points
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <select
-                  value={sortBy}
-                  onChange={(e) => {
-                    setSortBy(e.target.value);
-                    setExpandedUser(null);
-                  }}
-                  className="text-xs px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-violet-500"
-                >
-                  <option value="rank">Sort by Rank</option>
-                  <option value="points">Sort by Points</option>
-                  <option value="contributions">Sort by Contributions</option>
-                </select>
-                <button
-                  onClick={() => {
-                    setShowLeaderboard(false);
-                    setExpandedUser(null);
-                  }}
-                  className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                >
-                  <X className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Leaderboard Content */}
-          <div className="overflow-y-auto max-h-[calc(90vh-120px)] p-6 bg-white dark:bg-slate-900">
-            <div className="space-y-2">
-              {sortedContributors.map((contrib, idx) => {
-                const rank = idx + 1;
-                const isExpanded = expandedUser === contrib.id;
-                const isTop3 = rank <= 3;
-                
-                return (
-                  <div
-                    key={contrib.id}
-                    className={`group rounded-xl border-2 ${
-                      isTop3 ? 
-                        rank === 1 ? 'border-yellow-400/50 bg-yellow-500/5' :
-                        rank === 2 ? 'border-gray-300/50 bg-gray-300/5' :
-                        'border-amber-600/50 bg-amber-600/5'
-                      : 'border-slate-200/50 dark:border-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/20'
-                    } ${
-                      isExpanded ? 'border-violet-500/50 bg-violet-500/5' : ''
-                    } transition-all duration-300`}
-                  >
-                    <button
-                      onClick={() => setExpandedUser(isExpanded ? null : contrib.id)}
-                      className="w-full px-4 py-3 flex items-center gap-3 text-left"
-                    >
-                      {/* Rank with badge for top 3 */}
-                      <div className="w-10 flex-shrink-0 flex items-center justify-center">
-                        {isTop3 ? (
-                          <div className="relative">
-                            {getRankBadge(rank)}
-                            <span className="sr-only">Rank {rank}</span>
-                          </div>
-                        ) : (
-                          <span className="text-xs font-bold text-slate-400">#{rank}</span>
-                        )}
-                      </div>
-
-                      {/* Avatar - Click to open GitHub */}
-                      <a
-                        href={contrib.html_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-shrink-0"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <img
-                          src={contrib.avatar_url}
-                          alt={contrib.login}
-                          className={`w-10 h-10 rounded-full border-2 ${
-                            isTop3 ? 'border-yellow-400/50' : 'border-slate-200 dark:border-slate-700'
-                          } hover:opacity-80 transition-opacity cursor-pointer`}
-                          crossOrigin="anonymous"
-                        />
-                      </a>
-
-                      {/* Name & Details - Click to open GitHub */}
-                      <div className="flex-1 min-w-0">
-                        <a
-                          href={contrib.html_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 flex-wrap hover:underline"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <p className="font-bold text-sm text-slate-900 dark:text-white whitespace-nowrap">
-                            {contrib.login}
-                          </p>
-                          {isTop3 && (
-                            <span className={`text-[10px] font-black ${
-                              rank === 1 ? 'text-yellow-500' :
-                              rank === 2 ? 'text-gray-400' :
-                              'text-amber-600'
-                            }`}>
-                              ★ TOP {rank}
-                            </span>
-                          )}
-                        </a>
-                        <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
-                          <span className="flex items-center gap-1 whitespace-nowrap">
-                            <GitCommit className="w-3 h-3" />
-                            {contrib.commits} commits
-                          </span>
-                          <span className="flex items-center gap-1 whitespace-nowrap">
-                            <GitPullRequest className="w-3 h-3" />
-                            {contrib.closedPrs} closed PRs
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Points & Expand */}
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <div className="text-right">
-                          <p className={`font-bold text-sm ${
-                            isTop3 ? 'text-yellow-500' : 'text-violet-600 dark:text-violet-400'
-                          }`}>
-                            {contrib.points} pts
-                          </p>
-                        </div>
-                        {isExpanded ? (
-                          <ChevronUp className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                        ) : (
-                          <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                        )}
-                      </div>
-                    </button>
-
-                    {/* Expanded Details */}
-                    <AnimatePresence>
-                      {isExpanded && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.2 }}
-                          className="overflow-hidden"
-                        >
-                          <div className="px-4 pb-4 pt-0 border-t border-slate-200/50 dark:border-slate-800/50">
-                            <div className="grid grid-cols-3 gap-3 mt-3">
-                              <div className="p-3 rounded-xl bg-slate-100/50 dark:bg-slate-800/30 text-center">
-                                <p className="text-xs text-slate-500 dark:text-slate-400">Total Points</p>
-                                <p className="text-lg font-bold text-violet-600 dark:text-violet-400">
-                                  {contrib.points}
-                                </p>
-                              </div>
-                              <div className="p-3 rounded-xl bg-slate-100/50 dark:bg-slate-800/30 text-center">
-                                <p className="text-xs text-slate-500 dark:text-slate-400">Commits</p>
-                                <p className="text-lg font-bold text-slate-900 dark:text-white">
-                                  {contrib.commits}
-                                </p>
-                              </div>
-                              <div className="p-3 rounded-xl bg-slate-100/50 dark:bg-slate-800/30 text-center">
-                                <p className="text-xs text-slate-500 dark:text-slate-400">Closed PRs</p>
-                                <p className="text-lg font-bold text-green-600 dark:text-green-400">
-                                  {contrib.closedPrs}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="mt-3 flex justify-center">
-                              <a
-                                href={contrib.html_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-xs text-violet-600 dark:text-violet-400 hover:underline font-medium flex items-center gap-1"
-                              >
-                                <Star className="w-3 h-3" />
-                                View GitHub Profile
-                              </a>
-                            </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </motion.div>
-      </motion.div>
-    );
-  };
-
   return (
     <>
       <motion.div 
@@ -448,7 +456,15 @@ export const ContributorsGrid = ({ fadeInUp, staggerContainer }) => {
       </motion.div>
 
       <AnimatePresence>
-        <LeaderboardModal />
+        <LeaderboardModal 
+          showLeaderboard={showLeaderboard}
+          setShowLeaderboard={setShowLeaderboard}
+          sortedContributors={sortedContributors}
+          expandedUser={expandedUser}
+          setExpandedUser={setExpandedUser}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+        />
       </AnimatePresence>
     </>
   );
