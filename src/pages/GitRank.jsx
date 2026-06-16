@@ -110,6 +110,9 @@ export const GitRank = () => {
 
     const q = query(collection(db, "users"), ...constraints);
 
+    // Safety timeout: if Firestore cache is the only data source (e.g. offline), show data after 5s
+    const loadingTimeout = setTimeout(() => setLoadingUsers(false), 5000);
+
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
@@ -125,16 +128,24 @@ export const GitRank = () => {
 
         setUsersList(ranked);
         setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
-        setHasMore(snapshot.docs.length === 50); 
-        setLoadingUsers(false);
+        setHasMore(snapshot.docs.length === 50);
+        // Only stop loading on server data to avoid rendering cached (potentially unsorted) data first
+        if (!snapshot.metadata.fromCache) {
+          clearTimeout(loadingTimeout);
+          setLoadingUsers(false);
+        }
       },
       (error) => {
         console.error("Leaderboard subscription error:", error);
+        clearTimeout(loadingTimeout);
         setLoadingUsers(false);
       }
     );
 
-    return () => unsubscribe();
+    return () => {
+      clearTimeout(loadingTimeout);
+      unsubscribe();
+    };
   }, [selectedLanguage, activeTab, selectedCollege]); 
 
   // Pagination Function (Fetch next 50)
