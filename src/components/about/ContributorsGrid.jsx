@@ -51,7 +51,7 @@ export const ContributorsGrid = ({ fadeInUp, staggerContainer }) => {
           const login = (contrib.login || "").toLowerCase();
           return login !== "indresh404" && 
                  !login.includes("dependabot") && 
-                 login !== "divyagsharma2006-blip";
+                 login !== "divyaa404";
         });
         
         const sorted = filtered.sort((a, b) => b.contributions - a.contributions);
