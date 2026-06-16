@@ -245,6 +245,8 @@ export const Profile = () => {
           ...updateData
         }));
       }
+      // Sync avatar across open tabs via localStorage
+      localStorage.setItem(`rh_avatar_${user.uid}`, editAvatar.trim());
 
       setToasts((prev) => [...prev, { id: Date.now() + Math.random(), message: "Profile updated successfully!", type: "success" }]);
       setIsEditModalOpen(false);
