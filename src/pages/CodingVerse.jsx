@@ -16,7 +16,7 @@ import Card from "../components/ui/Card";
 import SectionHeader from "../components/ui/SectionHeader";
 import { useAuth } from "../context/AuthContext";
 import { db } from "../lib/firebase";
-import { doc, updateDoc, query, collection, where, getCountFromServer, getDocs } from "firebase/firestore";
+import { doc, updateDoc, query, collection, where, orderBy, limit, getCountFromServer, getDocs } from "firebase/firestore";
 
 // --- Language Definitions ---
 const LANGUAGES = [
@@ -367,31 +367,29 @@ _stderr.truncate(0)
   const [leaderboardError, setLeaderboardError] = useState("");
 
   // Fetch CodingVerse Global Leaderboard (Issue #302)
+  const leaderboardFetchedAt = useRef(0);
   useEffect(() => {
     const fetchLeaderboard = async () => {
       if (activeSidebarTab !== "leaderboard") return;
+      const now = Date.now();
+      if (now - leaderboardFetchedAt.current < 120_000) return;
       setLoadingLeaderboard(true);
       setLeaderboardError("");
       try {
         const q = query(
           collection(db, "users"),
-          where("onboardingStatus", "==", "complete")
+          where("onboardingStatus", "==", "complete"),
+          where("points.codingVersePoints", ">", 0),
+          orderBy("points.codingVersePoints", "desc"),
+          limit(20)
         );
         const snapshot = await getDocs(q);
-        const users = snapshot.docs.map((doc) => ({
+        const sortedUsers = snapshot.docs.map((doc) => ({
           uid: doc.id,
           ...doc.data(),
         }));
         
-        const sortedUsers = users
-          .filter(u => (u.points?.codingVersePoints || 0) > 0)
-          .sort((a, b) => {
-            const pointsA = a.points?.codingVersePoints || 0;
-            const pointsB = b.points?.codingVersePoints || 0;
-            return pointsB - pointsA;
-          })
-          .slice(0, 20);
-          
+        leaderboardFetchedAt.current = Date.now();
         setLeaderboardUsers(sortedUsers);
       } catch (err) {
         console.error("Error fetching CodingVerse leaderboard:", err);
